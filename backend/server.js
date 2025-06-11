@@ -4,9 +4,32 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const rateLimit = require('express-rate-limit');
 const { createError } = require('http-errors');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Proxy configuration for Librespeed
+const LIBRESPEED_HOST = process.env.LIBRESPEED_HOST || 'speedtest.railway.internal';
+const LIBRESPEED_PORT = process.env.LIBRESPEED_PORT || '8081';
+const LIBRESPEED_URL = `http://${LIBRESPEED_HOST}:${LIBRESPEED_PORT}`;
+
+// Configure proxy middleware
+const libspeedProxy = createProxyMiddleware({
+    target: LIBRESPEED_URL,
+    changeOrigin: true,
+    pathRewrite: {
+        '^/speedtest': '', // Remove /speedtest prefix when forwarding
+    },
+    onError: (err, req, res) => {
+        console.error('Proxy Error:', err);
+        res.status(502).json({
+            error: 'Bad Gateway',
+            message: 'Failed to proxy request to Librespeed service'
+        });
+    },
+    logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'error'
+});
 
 // Rate limiting middleware
 const limiter = rateLimit({
@@ -30,6 +53,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(limiter); // Apply rate limiting
+
+// Mount Librespeed proxy middleware
+app.use('/speedtest', libspeedProxy);
 
 // Database connection with retry logic
 const initializeDatabase = async (retries = 5, delay = 5000) => {
