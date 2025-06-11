@@ -38,7 +38,7 @@ autoDeploy = true
 [[services]]
 # Backend (Express API) Service
 serviceId = "backend"
-build = { dockerfilePath = "backend/Dockerfile" }
+build = { dockerfilePath = "./backend/Dockerfile" }
 environment = [
   { NODE_ENV = "production" },
   { PORT = "3000" },
@@ -53,3 +53,14 @@ environment = [
 autoDeploy = true
 dependsOn = ["postgres", "speedtest"] # Ensures deployment order
 healthcheck = { method = "GET", path = "/health", port = 3000 }
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "./backend/Dockerfile"
+
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
