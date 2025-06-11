@@ -17,8 +17,17 @@ const limiter = rateLimit({
     legacyHeaders: false,
 });
 
+// CORS configuration
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || '*', // Replace with your frontend URL when ready
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400 // 24 hours
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(limiter); // Apply rate limiting
 
