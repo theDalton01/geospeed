@@ -33,12 +33,9 @@ app.use(limiter); // Apply rate limiting
 
 // Database connection with retry logic
 const initializeDatabase = async (retries = 5, delay = 5000) => {
+    // Use DATABASE_URL if available, otherwise fall back to individual credentials
     const pool = new Pool({
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
-        database: process.env.DB_NAME,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD
+        connectionString: process.env.DATABASE_URL
     });
 
     for (let i = 0; i < retries; i++) {

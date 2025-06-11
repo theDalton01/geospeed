@@ -42,11 +42,7 @@ build = { dockerfilePath = "./backend/Dockerfile" }
 environment = [
   { NODE_ENV = "production" },
   { PORT = "3000" },
-  { DB_HOST = "postgres.railway.internal" }, # Use internal hostname
-  { DB_PORT = "5432" },
-  { DB_NAME = "" }, # Set via Railway dashboard
-  { DB_USER = "" }, # Set via Railway dashboard
-  { DB_PASSWORD = "" }, # Set via Railway dashboard
+  { DATABASE_URL = "${{ Postgres.DATABASE_URL }}" }, # Use Railway's connection string
   { LIBRESPEED_HOST = "speedtest.railway.internal" }, # Use internal hostname
   { LIBRESPEED_PORT = "8081" }
 ]
