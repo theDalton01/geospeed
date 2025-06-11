@@ -31,14 +31,68 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(limiter); // Apply rate limiting
 
-// Database connection
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD
-});
+// Database connection with retry logic
+const initializeDatabase = async (retries = 5, delay = 5000) => {
+    const pool = new Pool({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD
+    });
+
+    for (let i = 0; i < retries; i++) {
+        try {
+            // Test connection
+            await pool.query('SELECT NOW()');
+            console.log('Database connection successful');
+
+            // Create tables
+            await pool.query(`
+                CREATE EXTENSION IF NOT EXISTS plpgsql;
+                
+                CREATE TABLE IF NOT EXISTS speedtest_users (
+                    id SERIAL PRIMARY KEY,
+                    "timestamp" TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
+                    ip TEXT NOT NULL,
+                    ispinfo TEXT,
+                    extra TEXT,
+                    ua TEXT NOT NULL,
+                    lang TEXT NOT NULL,
+                    dl TEXT,
+                    ul TEXT,
+                    ping TEXT,
+                    jitter TEXT,
+                    log TEXT
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_speedtest_users_timestamp ON speedtest_users("timestamp");
+                CREATE INDEX IF NOT EXISTS idx_speedtest_users_ip ON speedtest_users(ip);
+            `);
+            console.log('Database tables created/checked');
+            return pool;
+        } catch (err) {
+            console.error(`Database initialization attempt ${i + 1}/${retries} failed:`, err.message);
+            if (i === retries - 1) {
+                console.error('All database initialization attempts failed');
+                throw err;
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+};
+
+// Initialize database connection
+let pool;
+initializeDatabase()
+    .then(p => {
+        pool = p;
+        console.log('Database initialization complete');
+    })
+    .catch(err => {
+        console.error('Failed to initialize database:', err);
+        // Don't exit the process, let the health check handle it
+    });
 
 // Custom error handler
 const errorHandler = (error, req, res, next) => {
@@ -75,40 +129,6 @@ const errorHandler = (error, req, res, next) => {
     });
 };
 
-// Create tables if they don't exist
-const createTables = async () => {
-    try {
-        await pool.query(`
-            CREATE EXTENSION IF NOT EXISTS plpgsql;
-            
-            CREATE TABLE IF NOT EXISTS speedtest_users (
-                id SERIAL PRIMARY KEY,
-                "timestamp" TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
-                ip TEXT NOT NULL,
-                ispinfo TEXT,
-                extra TEXT,
-                ua TEXT NOT NULL,
-                lang TEXT NOT NULL,
-                dl TEXT,
-                ul TEXT,
-                ping TEXT,
-                jitter TEXT,
-                log TEXT
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_speedtest_users_timestamp ON speedtest_users("timestamp");
-            CREATE INDEX IF NOT EXISTS idx_speedtest_users_ip ON speedtest_users(ip);
-        `);
-        console.log('Database tables created/checked');
-    } catch (err) {
-        console.error('Error creating tables:', err);
-        throw createError(500, 'Failed to create database tables', { cause: err });
-    }
-};
-
-// Initialize database
-createTables();
-
 // Helper function to parse speed values
 const parseSpeed = (speed) => {
     if (!speed) return 0;
@@ -118,6 +138,10 @@ const parseSpeed = (speed) => {
 
 // API Routes
 app.get('/api/speed-tests', async (req, res, next) => {
+    if (!pool) {
+        return next(createError(503, 'Database not initialized'));
+    }
+
     try {
         const { ip, limit = 100 } = req.query;
         
@@ -165,6 +189,10 @@ app.get('/api/speed-tests', async (req, res, next) => {
 });
 
 app.get('/api/average-speed', async (req, res, next) => {
+    if (!pool) {
+        return next(createError(503, 'Database not initialized'));
+    }
+
     try {
         const { ip } = req.query;
         
@@ -198,14 +226,30 @@ app.get('/api/average-speed', async (req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ status: 'healthy' });
+app.get('/health', async (req, res) => {
+    try {
+        if (!pool) {
+            throw new Error('Database not initialized');
+        }
+        await pool.query('SELECT 1');
+        res.json({ 
+            status: 'healthy',
+            database: 'connected',
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        res.status(503).json({
+            status: 'unhealthy',
+            database: err.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // Apply error handling middleware
 app.use(errorHandler);
 
 // Start server
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
