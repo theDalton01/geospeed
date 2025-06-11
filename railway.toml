@@ -1,0 +1,55 @@
+# railway.toml
+
+[[services]]
+# Speedtest (Librespeed) Service
+serviceId = "speedtest"
+build = { dockerfilePath = "librespeed/Dockerfile" }
+environment = [
+  { MODE = "" }, # Set via Railway dashboard
+  { BACKENDPORT = "8081" },
+  { TELEMETRY_LEVEL = "" }, # Set via Railway dashboard
+  { DB_TYPE = "postgres" },
+  { DB_HOST = "postgres.railway.internal" }, # Use internal hostname
+  { DB_PORT = "5432" },
+  { DB_NAME = "" }, # Set via Railway dashboard
+  { DB_USER = "" }, # Set via Railway dashboard
+  { DB_PASSWORD = "" }, # Set via Railway dashboard
+  { DB_TABLE = "" }, # Set via Railway dashboard
+  { TELEMETRY_INTERVAL = "" }, # Set via Railway dashboard
+  { TELEMETRY_RETENTION = "" }, # Set via Railway dashboard
+  { TELEMETRY_MAX_ROWS = "" }, # Set via Railway dashboard
+  { TELEMETRY_CLEANUP_INTERVAL = "" } # Set via Railway dashboard
+]
+autoDeploy = true
+healthcheck = { method = "GET", path = "/health", port = 8081 }
+
+[[services]]
+# PostgreSQL Service
+serviceId = "postgres"
+image = "postgres:15"
+environment = [
+  { POSTGRES_DB = "" }, # Set via Railway dashboard
+  { POSTGRES_USER = "" }, # Set via Railway dashboard
+  { POSTGRES_PASSWORD = "" } # Set via Railway dashboard
+]
+autoDeploy = true
+# Enable volume in Railway dashboard for persistent storage
+
+[[services]]
+# Backend (Express API) Service
+serviceId = "backend"
+build = { dockerfilePath = "backend/Dockerfile" }
+environment = [
+  { NODE_ENV = "production" },
+  { PORT = "3000" },
+  { DB_HOST = "postgres.railway.internal" }, # Use internal hostname
+  { DB_PORT = "5432" },
+  { DB_NAME = "" }, # Set via Railway dashboard
+  { DB_USER = "" }, # Set via Railway dashboard
+  { DB_PASSWORD = "" }, # Set via Railway dashboard
+  { LIBRESPEED_HOST = "speedtest.railway.internal" }, # Use internal hostname
+  { LIBRESPEED_PORT = "8081" }
+]
+autoDeploy = true
+dependsOn = ["postgres", "speedtest"] # Ensures deployment order
+healthcheck = { method = "GET", path = "/health", port = 3000 }
