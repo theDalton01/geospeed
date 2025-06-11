@@ -238,7 +238,8 @@ app.get('/health', async (req, res) => {
         res.status(503).json({
             status: 'unhealthy',
             database: err.message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            DATABASE_URL: process.env.DATABASE_URL
         });
     }
 });
