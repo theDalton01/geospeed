@@ -4,17 +4,27 @@ FROM node:18-slim as builder
 # Set working directory
 WORKDIR /app
 
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with exact versions and only production
-RUN npm ci --only=production
+# Install dependencies - try npm ci first, fallback to npm install
+RUN if [ -f package-lock.json ]; then \
+        npm ci --only=production; \
+    else \
+        npm install --only=production; \
+    fi
 
 # Copy source code
 COPY . .
 
 # Production stage
 FROM node:18-slim
+
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
