@@ -1,14 +1,14 @@
 # Build stage
 FROM node:18-slim as builder
 
-# Set working directory
-WORKDIR /app
-
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy package files
-COPY package*.json ./
+# Set working directory
+WORKDIR /app
+
+# Copy package files first
+COPY backend/package*.json ./
 
 # Install dependencies - try npm ci first, fallback to npm install
 RUN if [ -f package-lock.json ]; then \
@@ -18,7 +18,7 @@ RUN if [ -f package-lock.json ]; then \
     fi
 
 # Copy source code
-COPY . .
+COPY backend/ ./
 
 # Production stage
 FROM node:18-slim
