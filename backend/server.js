@@ -10,8 +10,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Proxy configuration for Librespeed
-const LIBRESPEED_HOST = process.env.LIBRESPEED_HOST || 'speedtest.railway.internal';
-const LIBRESPEED_PORT = process.env.LIBRESPEED_PORT || '8081';
+const LIBRESPEED_HOST = process.env.LIBRESPEED_HOST;
+const LIBRESPEED_PORT = process.env.LIBRESPEED_PORT;
 const LIBRESPEED_URL = `http://${LIBRESPEED_HOST}:${LIBRESPEED_PORT}`;
 
 // Configure proxy middleware
@@ -42,9 +42,19 @@ const limiter = rateLimit({
 
 // CORS configuration
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || '*', // Replace with your frontend URL when ready
+    origin: process.env.FRONTEND_URL || "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Content-Encoding',
+        'Accept',
+        'Origin',
+        'X-Requested-With',
+        'Access-Control-Request-Method',
+        'Access-Control-Request-Headers'
+    ],
+    exposedHeaders: ['Content-Encoding'],
     credentials: true,
     maxAge: 86400 // 24 hours
 };
@@ -264,8 +274,7 @@ app.get('/health', async (req, res) => {
         res.status(503).json({
             status: 'unhealthy',
             database: err.message,
-            timestamp: new Date().toISOString(),
-            DATABASE_URL: process.env.DATABASE_URL
+            timestamp: new Date().toISOString()
         });
     }
 });
