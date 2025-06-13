@@ -5,20 +5,20 @@
 serviceId = "speedtest"
 build = { dockerfilePath = "librespeed/Dockerfile" }
 environment = [
-  { MODE = "" }, # Set via Railway dashboard
+  { MODE = "backend" },
   { BACKENDPORT = "8081" },
-  { TELEMETRY_LEVEL = "" }, # Set via Railway dashboard
+  { TELEMETRY_LEVEL = "basic" },
   { DB_TYPE = "postgres" },
-  { DB_HOST = "postgres.railway.internal" }, # Use internal hostname
+  { DB_HOST = "postgres.railway.internal" },
   { DB_PORT = "5432" },
   { DB_NAME = "" }, # Set via Railway dashboard
   { DB_USER = "" }, # Set via Railway dashboard
   { DB_PASSWORD = "" }, # Set via Railway dashboard
-  { DB_TABLE = "" }, # Set via Railway dashboard
-  { TELEMETRY_INTERVAL = "" }, # Set via Railway dashboard
-  { TELEMETRY_RETENTION = "" }, # Set via Railway dashboard
-  { TELEMETRY_MAX_ROWS = "" }, # Set via Railway dashboard
-  { TELEMETRY_CLEANUP_INTERVAL = "" } # Set via Railway dashboard
+  { DB_TABLE = "speedtest_users" },
+  { TELEMETRY_INTERVAL = "60" },
+  { TELEMETRY_RETENTION = "30" },
+  { TELEMETRY_MAX_ROWS = "1000000" },
+  { TELEMETRY_CLEANUP_INTERVAL = "24" }
 ]
 autoDeploy = true
 healthcheck = { method = "GET", path = "/health", port = 8081 }
