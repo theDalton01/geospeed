@@ -19,7 +19,7 @@ const libspeedProxy = createProxyMiddleware({
     target: LIBRESPEED_URL,
     changeOrigin: true,
     pathRewrite: {
-        '^/speedtest/backend': '/backend',
+        '^/speedtest/backend': '',
     },
     onError: (err, req, res) => {
         console.error('Proxy Error:', err);
