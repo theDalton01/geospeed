@@ -3,7 +3,7 @@
 [[services]]
 # Speedtest (Librespeed) Service
 serviceId = "speedtest"
-build = { dockerfilePath = "librespeed/Dockerfile" }
+build = { dockerfilePath = "backend/librespeed/Dockerfile" }
 environment = [
   { MODE = "backend" },
   { BACKENDPORT = "8081" },
