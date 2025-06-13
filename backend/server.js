@@ -65,7 +65,7 @@ app.use(express.json());
 app.use(limiter); // Apply rate limiting
 
 // Mount Librespeed proxy middleware
-app.use('/speedtest', libspeedProxy);
+app.use('/speedtest/backend', libspeedProxy);
 
 // Database connection with retry logic
 const initializeDatabase = async (retries = 5, delay = 5000) => {
