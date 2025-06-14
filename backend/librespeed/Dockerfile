@@ -11,9 +11,11 @@ ENV MODE=backend \
     TELEMETRY_MAX_ROWS=1000000 \
     TELEMETRY_CLEANUP_INTERVAL=24
 
+# Set ServerName to localhost
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8081/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD nc -z localhost 8081 || exit 1
 
 # Expose backend port
 EXPOSE 8081
