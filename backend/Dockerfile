@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy package files first
-COPY backend/express-api/package*.json ./
+COPY backend/package*.json ./
 
 # Install dependencies - try npm ci first, fallback to npm install
 RUN if [ -f package-lock.json ]; then \
@@ -18,7 +18,7 @@ RUN if [ -f package-lock.json ]; then \
     fi
 
 # Copy source code
-COPY backend/express-api ./
+COPY backend/ ./
 
 # Production stage
 FROM node:18-slim
