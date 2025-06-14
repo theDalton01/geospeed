@@ -1,0 +1,25 @@
+{
+  "name": "netscope-backend",
+  "version": "1.0.0",
+  "description": "Backend API for NetScope",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "http-errors": "^2.0.0",
+    "http-proxy-middleware": "^3.0.5",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4"
+  }
+}
