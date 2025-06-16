@@ -46,7 +46,7 @@ if [ "$MODE" != "backend" ]; then
 fi
 
 # Apply Telemetry settings when running in standalone or frontend mode and telemetry is enabled
-if [[ "$TELEMETRY" == "true" && ("$MODE" == "frontend" || "$MODE" == "standalone" || "$MODE" == "dual") ]]; then
+if [[ "$TELEMETRY" == "true" && ("$MODE" == "frontend" || "$MODE" == "standalone" || "$MODE" == "dual" || "$MODE" == "backend") ]]; then
   cp -r /speedtest/results /var/www/html/results
 
   if [ "$MODE" == "frontend" ]; then
@@ -107,6 +107,21 @@ if [ "$WEBPORT" != "80" ]; then
     sed -i "s/*:80>/*:$WEBPORT>/g" /etc/apache2/sites-available/000-default.conf
   fi
 fi
+
+# Debug environment variables
+echo "DB_HOSTNAME=$DB_HOSTNAME" >> /var/log/env.log
+echo "DB_USER=$DB_USER" >> /var/log/env.log
+echo "DB_NAME=$DB_NAME" >> /var/log/env.log
+echo "DB_PASSWORD=$DB_PASSWORD" >> /var/log/env.log
+echo "MODE=$MODE" >> /var/log/env.log
+echo "TELEMETRY=$TELEMETRY" >> /var/log/env.log
+echo "DB_TYPE=$DB_TYPE" >> /var/log/env.log
+echo "DB_USERNAME=$DB_USERNAME" >> /var/log/env.log
+echo "DB_PORT=$DB_PORT" >> /var/log/env.log
+echo "ENABLE_ID_OBFUSCATION=$ENABLE_ID_OBFUSCATION" >> /var/log/env.log
+echo "REDACT_IP_ADDRESSES=$REDACT_IP_ADDRESSES" >> /var/log/env.log
+echo "IPINFO_APIKEY=$IPINFO_APIKEY" >> /var/log/env.log
+cat /var/log/env.log
 
 echo "Done, Starting APACHE"
 
