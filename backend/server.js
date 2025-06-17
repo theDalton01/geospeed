@@ -4,9 +4,11 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const rateLimit = require('express-rate-limit');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const multer = require('multer');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const upload = multer();
 
 // Proxy configuration for Librespeed backend routes (excluding telemetry)
 const LIBRESPEED_HOST = process.env.LIBRESPEED_HOST;
@@ -145,7 +147,7 @@ const getClientIp = (req) => {
 };
 
 // Telemetry route with enhanced debugging
-app.post('/speedtest/results/telemetry.php', async (req, res, next) => {
+app.post('/speedtest/results/telemetry.php', upload.none(), async (req, res, next) => {
     // Log request headers and raw body for debugging
     console.log('Telemetry request headers:', {
         contentType: req.headers['content-type'],
@@ -228,7 +230,7 @@ app.post('/speedtest/results/telemetry.php', async (req, res, next) => {
     }
 });
 
-// Existing API Routes
+// API Routes
 app.get('/api/speed-tests', async (req, res, next) => {
     if (!pool) {
         return next(new Error('Database not initialized'));
