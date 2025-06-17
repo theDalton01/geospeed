@@ -20,7 +20,7 @@ const libspeedProxy = createProxyMiddleware({
     changeOrigin: true,
     pathRewrite: {
         '^/speedtest/backend': '/backend',
-        '^/speedtest/results': '/results',
+        '^/speedtest/results/telemetry.php': '/results/telemetry.php',
     },
     onError: (err, req, res) => {
         console.error('Proxy Error:', err);
@@ -67,7 +67,7 @@ app.use(limiter); // Apply rate limiting
 
 // Mount Librespeed proxy middleware
 app.use('/speedtest/backend', libspeedProxy);
-app.use('/speedtest/results', libspeedProxy);
+app.use('/speedtest/results/telemetry.php', libspeedProxy);
 
 // Database connection with retry logic
 const initializeDatabase = async (retries = 5, delay = 5000) => {
