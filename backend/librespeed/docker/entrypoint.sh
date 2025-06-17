@@ -48,7 +48,7 @@ fi
 # Apply Telemetry settings when running in standalone or frontend mode and telemetry is enabled
 if [[ "$TELEMETRY" == "true" && ("$MODE" == "frontend" || "$MODE" == "standalone" || "$MODE" == "dual" || "$MODE" == "backend") ]]; then
   cp -r /speedtest/results /var/www/html/results
-  echo /var/www/html/results/telemetry.php
+  echo /var/www/html/results/telemetry.php >> /var/log/env.log
 
   if [ "$MODE" == "frontend" ]; then
     mkdir /var/www/html/backend
