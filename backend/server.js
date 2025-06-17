@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const rateLimit = require('express-rate-limit');
-const { createError } = require('http-errors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
@@ -128,98 +127,111 @@ initializeDatabase()
         // Don't exit the process, let the health check handle it
     });
 
-// Helper function to parse speed values (matches your existing logic)
+// Helper function to parse speed values
 const parseSpeed = (speed) => {
     if (!speed) return 0;
     const value = parseFloat(speed);
     return isNaN(value) ? 0 : value;
 };
 
-// Helper function to get client IP (replicates getIP_util.php)
+// Helper function to get client IP
 const getClientIp = (req) => {
-    // Check headers in order of priority, mimicking getClientIp() from getIP_util.php
     let ip = req.headers['client-ip'] ||
              req.headers['x-real-ip'] ||
              req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
              req.ip ||
              req.connection.remoteAddress;
-    // Remove IPv6 prefix (::ffff:) for compatibility
     return ip ? ip.replace(/^::ffff:/, '') : '0.0.0.0';
 };
 
-// New telemetry route to replace proxy to telemetry.php
+// Telemetry route with enhanced debugging
 app.post('/speedtest/results/telemetry.php', async (req, res, next) => {
+    // Log request headers and raw body for debugging
+    console.log('Telemetry request headers:', {
+        contentType: req.headers['content-type'],
+        userAgent: req.headers['user-agent']
+    });
+    console.log('Telemetry raw body:', req.body);
+
     // Ensure database is initialized
     if (!pool) {
-        return next(createError(503, 'Database not initialized'));
+        console.error('Telemetry error: Database pool not initialized');
+        return next(new Error('Database not initialized')); // Use plain Error
     }
 
     try {
-        // Extract telemetry payload from POST form data (matches telemetry.php)
-        let { ispinfo, dl, ul, ping, jitter, log, extra, ip: clientIp } = req.body;
-        const ua = req.headers['user-agent'] || ''; // HTTP_USER_AGENT
-        const lang = req.headers['accept-language'] || ''; // HTTP_ACCEPT_LANGUAGE
-        let ip = clientIp || getClientIp(req); // Use provided IP or detect from headers
+        // Safely extract payload with default empty object
+        let { ispinfo = '', dl = '', ul = '', ping = '', jitter = '', log = '', extra = '', ip: clientIp = '' } = req.body || {};
+        const ua = req.headers['user-agent'] || '';
+        const lang = req.headers['accept-language'] || '';
+        let ip = clientIp || getClientIp(req);
 
-        // IP redaction logic (matches telemetry.php)
-        const redactIpAddresses = false; // Matches $redact_ip_addresses in telemetry_settings.php
+        // Log processed data
+        console.log('Telemetry processed data:', { ip, ispinfo, extra, ua, lang, dl, ul, ping, jitter, log });
+
+        // IP redaction logic
+        const redactIpAddresses = false;
         if (redactIpAddresses) {
             ip = '0.0.0.0';
-            // Regex for IPv4, IPv6, and hostname (from telemetry.php)
             const ipv4Regex = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/g;
             const ipv6Regex = /(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))/g;
             const hostnameRegex = /"hostname":"([^\\"]|\\")*"/g;
-            ispinfo = (ispinfo || '')
+            ispinfo = ispinfo
                 .replace(ipv4Regex, '0.0.0.0')
                 .replace(ipv6Regex, '0.0.0.0')
                 .replace(hostnameRegex, '"hostname":"REDACTED"');
-            log = (log || '')
+            log = log
                 .replace(ipv4Regex, '0.0.0.0')
                 .replace(ipv6Regex, '0.0.0.0')
                 .replace(hostnameRegex, '"hostname":"REDACTED"');
         }
 
-        // Insert data into speedtest_users table (matches insertSpeedtestUser in telemetry_db.php)
+        // Insert data
         const query = `
             INSERT INTO speedtest_users (timestamp, ip, ispinfo, extra, ua, lang, dl, ul, ping, jitter, log)
             VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING id
         `;
         const values = [
-            ip || '0.0.0.0', // Ensure non-null IP
-            ispinfo || '',
-            extra || '',
-            ua || '',
-            lang || '',
-            dl ? dl.toString() : '', // Store as TEXT per your schema
-            ul ? ul.toString() : '',
-            ping ? ping.toString() : '',
-            jitter ? jitter.toString() : '',
-            log || ''
+            ip,
+            ispinfo,
+            extra,
+            ua,
+            lang,
+            dl.toString(),
+            ul.toString(),
+            ping.toString(),
+            jitter.toString(),
+            log
         ];
 
+        console.log('Executing query with values:', values);
         const result = await pool.query(query, values);
         const id = result.rows[0].id;
 
-        // Set no-cache headers (matches telemetry.php)
+        // Set no-cache headers
         res.set({
             'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0',
             'Pragma': 'no-cache'
         });
 
-        // Return id in the format expected by LibreSpeed frontend (id <number>)
+        // Return id
         res.send(`id ${id}`);
     } catch (err) {
-        console.error('Telemetry error:', err);
-        // Mimic telemetry.php's exit(1) by returning a 500 status
-        next(createError(500, 'Failed to save telemetry data', { cause: err }));
+        console.error('Telemetry error details:', {
+            message: err.message,
+            stack: err.stack,
+            requestBody: req.body
+        });
+        // Use plain Error instead of createError
+        next(new Error('Failed to save telemetry data'));
     }
 });
 
 // Existing API Routes
 app.get('/api/speed-tests', async (req, res, next) => {
     if (!pool) {
-        return next(createError(503, 'Database not initialized'));
+        return next(new Error('Database not initialized'));
     }
 
     try {
@@ -228,7 +240,7 @@ app.get('/api/speed-tests', async (req, res, next) => {
         // Validate limit parameter
         const parsedLimit = parseInt(limit);
         if (isNaN(parsedLimit) || parsedLimit <= 0) {
-            return next(createError(400, 'Invalid limit parameter'));
+            return next(new Error('Invalid limit parameter'));
         }
 
         const query = `
@@ -264,13 +276,13 @@ app.get('/api/speed-tests', async (req, res, next) => {
         
         res.json(formattedResults);
     } catch (err) {
-        next(createError(500, 'Failed to fetch speed tests', { cause: err }));
+        next(new Error('Failed to fetch speed tests'));
     }
 });
 
 app.get('/api/average-speed', async (req, res, next) => {
     if (!pool) {
-        return next(createError(503, 'Database not initialized'));
+        return next(new Error('Database not initialized'));
     }
 
     try {
@@ -278,7 +290,7 @@ app.get('/api/average-speed', async (req, res, next) => {
         
         // Validate IP parameter
         if (ip && (!ip.includes('.') && !ip.includes(':'))) {
-            return next(createError(400, 'Invalid IP address format'));
+            return next(new Error('Invalid IP address format'));
         }
 
         const query = `
@@ -301,7 +313,7 @@ app.get('/api/average-speed', async (req, res, next) => {
             avg_ping: parseSpeed(averages.avg_ping)
         });
     } catch (err) {
-        next(createError(500, 'Failed to calculate average speed', { cause: err }));
+        next(new Error('Failed to calculate average speed'));
     }
 });
 
