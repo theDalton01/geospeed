@@ -9,18 +9,17 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Proxy configuration for Librespeed
+// Proxy configuration for Librespeed backend routes (excluding telemetry)
 const LIBRESPEED_HOST = process.env.LIBRESPEED_HOST;
 const LIBRESPEED_PORT = process.env.LIBRESPEED_PORT;
 const LIBRESPEED_URL = `http://${LIBRESPEED_HOST}:${LIBRESPEED_PORT}`;
 
-// Configure proxy middleware
+// Configure proxy middleware for backend routes (e.g., /backend/garbage.php)
 const libspeedProxy = createProxyMiddleware({
     target: LIBRESPEED_URL,
     changeOrigin: true,
     pathRewrite: {
         '^/speedtest/backend': '/backend',
-        '^/speedtest/results/telemetry.php': '/results/telemetry.php',
     },
     onError: (err, req, res) => {
         console.error('Proxy Error:', err);
@@ -32,16 +31,16 @@ const libspeedProxy = createProxyMiddleware({
     logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'error'
 });
 
-// Rate limiting middleware
+// Rate limiting middleware for all routes
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    max: 100, // Limit each IP to 100 requests per window
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
 });
 
-// CORS configuration
+// CORS configuration for frontend access
 const corsOptions = {
     origin: process.env.FRONTEND_URL || "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -63,11 +62,11 @@ const corsOptions = {
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(limiter); // Apply rate limiting
 
-// Mount Librespeed proxy middleware
+// Mount Librespeed proxy for backend routes only
 app.use('/speedtest/backend', libspeedProxy);
-app.use('/speedtest/results/telemetry.php', libspeedProxy);
 
 // Database connection with retry logic
 const initializeDatabase = async (retries = 5, delay = 5000) => {
@@ -129,49 +128,95 @@ initializeDatabase()
         // Don't exit the process, let the health check handle it
     });
 
-// Custom error handler
-const errorHandler = (error, req, res, next) => {
-    console.error('Error:', error);
-    
-    // Handle database errors
-    if (error.code === '23505') { // Unique constraint violation
-        return res.status(400).json({
-            error: 'Duplicate entry',
-            message: 'This entry already exists in the database'
-        });
-    }
-    
-    // Handle rate limit errors
-    if (error.message === 'Too many requests from this IP, please try again later.') {
-        return res.status(429).json({
-            error: 'Rate limit exceeded',
-            message: error.message
-        });
-    }
-    
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-        return res.status(400).json({
-            error: 'Validation error',
-            message: error.message
-        });
-    }
-    
-    // Default error handling
-    res.status(error.status || 500).json({
-        error: error.message || 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-};
-
-// Helper function to parse speed values
+// Helper function to parse speed values (matches your existing logic)
 const parseSpeed = (speed) => {
     if (!speed) return 0;
     const value = parseFloat(speed);
     return isNaN(value) ? 0 : value;
 };
 
-// API Routes
+// Helper function to get client IP (replicates getIP_util.php)
+const getClientIp = (req) => {
+    // Check headers in order of priority, mimicking getClientIp() from getIP_util.php
+    let ip = req.headers['client-ip'] ||
+             req.headers['x-real-ip'] ||
+             req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+             req.ip ||
+             req.connection.remoteAddress;
+    // Remove IPv6 prefix (::ffff:) for compatibility
+    return ip ? ip.replace(/^::ffff:/, '') : '0.0.0.0';
+};
+
+// New telemetry route to replace proxy to telemetry.php
+app.post('/speedtest/results/telemetry.php', async (req, res, next) => {
+    // Ensure database is initialized
+    if (!pool) {
+        return next(createError(503, 'Database not initialized'));
+    }
+
+    try {
+        // Extract telemetry payload from POST form data (matches telemetry.php)
+        let { ispinfo, dl, ul, ping, jitter, log, extra, ip: clientIp } = req.body;
+        const ua = req.headers['user-agent'] || ''; // HTTP_USER_AGENT
+        const lang = req.headers['accept-language'] || ''; // HTTP_ACCEPT_LANGUAGE
+        let ip = clientIp || getClientIp(req); // Use provided IP or detect from headers
+
+        // IP redaction logic (matches telemetry.php)
+        const redactIpAddresses = false; // Matches $redact_ip_addresses in telemetry_settings.php
+        if (redactIpAddresses) {
+            ip = '0.0.0.0';
+            // Regex for IPv4, IPv6, and hostname (from telemetry.php)
+            const ipv4Regex = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/g;
+            const ipv6Regex = /(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))/g;
+            const hostnameRegex = /"hostname":"([^\\"]|\\")*"/g;
+            ispinfo = (ispinfo || '')
+                .replace(ipv4Regex, '0.0.0.0')
+                .replace(ipv6Regex, '0.0.0.0')
+                .replace(hostnameRegex, '"hostname":"REDACTED"');
+            log = (log || '')
+                .replace(ipv4Regex, '0.0.0.0')
+                .replace(ipv6Regex, '0.0.0.0')
+                .replace(hostnameRegex, '"hostname":"REDACTED"');
+        }
+
+        // Insert data into speedtest_users table (matches insertSpeedtestUser in telemetry_db.php)
+        const query = `
+            INSERT INTO speedtest_users (timestamp, ip, ispinfo, extra, ua, lang, dl, ul, ping, jitter, log)
+            VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id
+        `;
+        const values = [
+            ip || '0.0.0.0', // Ensure non-null IP
+            ispinfo || '',
+            extra || '',
+            ua || '',
+            lang || '',
+            dl ? dl.toString() : '', // Store as TEXT per your schema
+            ul ? ul.toString() : '',
+            ping ? ping.toString() : '',
+            jitter ? jitter.toString() : '',
+            log || ''
+        ];
+
+        const result = await pool.query(query, values);
+        const id = result.rows[0].id;
+
+        // Set no-cache headers (matches telemetry.php)
+        res.set({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0',
+            'Pragma': 'no-cache'
+        });
+
+        // Return id in the format expected by LibreSpeed frontend (id <number>)
+        res.send(`id ${id}`);
+    } catch (err) {
+        console.error('Telemetry error:', err);
+        // Mimic telemetry.php's exit(1) by returning a 500 status
+        next(createError(500, 'Failed to save telemetry data', { cause: err }));
+    }
+});
+
+// Existing API Routes
 app.get('/api/speed-tests', async (req, res, next) => {
     if (!pool) {
         return next(createError(503, 'Database not initialized'));
@@ -280,6 +325,41 @@ app.get('/health', async (req, res) => {
         });
     }
 });
+
+// Custom error handler
+const errorHandler = (error, req, res, next) => {
+    console.error('Error:', error);
+    
+    // Handle database errors
+    if (error.code === '23505') { // Unique constraint violation
+        return res.status(400).json({
+            error: 'Duplicate entry',
+            message: 'This entry already exists in the database'
+        });
+    }
+    
+    // Handle rate limit errors
+    if (error.message === 'Too many requests from this IP, please try again later.') {
+        return res.status(429).json({
+            error: 'Rate limit exceeded',
+            message: error.message
+        });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({
+            error: 'Validation error',
+            message: error.message
+        });
+    }
+    
+    // Default error handling
+    res.status(error.status || 500).json({
+        error: error.message || 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+};
 
 // Apply error handling middleware
 app.use(errorHandler);
