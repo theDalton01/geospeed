@@ -8,17 +8,13 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy package files first
-COPY backend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies - try npm ci first, fallback to npm install
-RUN if [ -f package-lock.json ]; then \
-        npm ci --only=production; \
-    else \
-        npm install --only=production; \
-    fi
+RUN if [ -f package-lock.json ]; then         npm ci --only=production;     else         npm install --only=production;     fi
 
 # Copy source code
-COPY backend/ ./
+COPY . ./
 
 # Production stage
 FROM node:18-slim

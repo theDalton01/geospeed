@@ -15,8 +15,7 @@ WORKDIR /speedtest
 
 # Copy necessary files
 COPY backend/ /speedtest/backend/
-COPY results/*.php /speedtest/results/
-COPY results/*.ttf /speedtest/results/
+COPY results/ /speedtest/results/
 COPY *.js /speedtest/
 COPY favicon.ico /speedtest/
 COPY docker/servers.json /speedtest/
