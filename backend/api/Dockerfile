@@ -28,10 +28,15 @@ RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
 # Set working directory
 WORKDIR /app
 
-# Copy only required files from builder
+# Copy dependencies and source code from builder
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server.js ./server.js
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/controllers ./controllers
+COPY --from=builder /app/middlewares ./middlewares
+COPY --from=builder /app/models ./models
+COPY --from=builder /app/routes ./routes
+COPY --from=builder /app/utils ./utils
 
 # Set environment variables
 ENV NODE_ENV=production \
