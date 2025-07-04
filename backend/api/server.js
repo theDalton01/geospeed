@@ -4,6 +4,12 @@ const cors = require("cors");
 
 const app = express();
 app.set('trust proxy', 1); // Trust the first proxy
+
+// Middleware to normalize request paths and remove duplicate slashes
+app.use((req, res, next) => {
+  req.url = req.path.replace(/\/+/g, '/');
+  next();
+});
 const port = process.env.PORT || 3000;
 
 // initDb
