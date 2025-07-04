@@ -1,5 +1,5 @@
 const pool = require("../models/pool");
-const { getClientIp } = require("../utils/helpers");
+const { getClientIp } = require("../utils/helper");
 
 const telemetryController = async (req, res, next) => {
   // Log request headers and raw body for debugging

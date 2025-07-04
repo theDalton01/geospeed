@@ -1,5 +1,5 @@
 const pool = require("../models/pool");
-const { parseSpeed } = require("../utils/helpers");
+const { parseSpeed } = require("../utils/helper");
 
 const averageSpeed = async (req, res, next) => {
   try {
