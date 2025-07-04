@@ -4,18 +4,18 @@ require("dotenv").config();
 // Database connection with retry logic
 const initializeDatabase = async (retries = 5, delay = 5000) => {
   const client = new Client({
-    connectionString: process.env.DATABASE_URI,
+    connectionString: process.env.DATABASE_URL,
     ssl: {
       rejectUnauthorized: false,
     },
   });
+  
+  // seeding
+  console.log("seeding...");
+  await client.connect();
 
   for (let i = 0; i < retries; i++) {
     try {
-      // seeding
-      console.log("seeding...");
-      await client.connect();
-
       // Test connection
       await client.query("SELECT NOW()");
       console.log("Database connection successful");
