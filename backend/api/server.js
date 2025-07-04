@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
+app.set('trust proxy', 1); // Trust the first proxy
 const port = process.env.PORT || 3000;
 
 // initDb

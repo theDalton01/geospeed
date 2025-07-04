@@ -11,8 +11,7 @@ const libspeedProxy = createProxyMiddleware({
   target: LIBRESPEED_URL,
   changeOrigin: true,
   pathRewrite: {
-    //'^/speedtest/backend': '/backend',
-    "^/speedtest/backend": "",
+    '^/speedtest/backend': '/backend',
   },
   onProxyRes: (proxyRes, req, res) => {
     // Set CORS headers for the response from the upstream service
