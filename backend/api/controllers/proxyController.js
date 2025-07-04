@@ -13,6 +13,14 @@ const libspeedProxy = createProxyMiddleware({
     pathRewrite: {
         '^/speedtest/backend': '/backend',
     },
+    onProxyRes: (proxyRes, req, res) => {
+        // Set CORS headers for the response from the upstream service
+        const origin = req.headers.origin;
+        if (origin) {
+            proxyRes.headers['Access-Control-Allow-Origin'] = origin;
+        }
+        proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
+    },
     onError: (err, req, res) => {
         console.error('Proxy Error:', err);
         res.status(502).json({
