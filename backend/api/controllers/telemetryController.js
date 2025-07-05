@@ -11,7 +11,7 @@ const telemetryController = async (req, res, next) => {
 
   try {
     // Safely extract payload with default empty object
-    let {
+    const {
       ispinfo = "",
       dl = "",
       ul = "",
@@ -24,6 +24,17 @@ const telemetryController = async (req, res, next) => {
     const ua = req.headers["user-agent"] || "";
     const lang = req.headers["accept-language"] || "";
     let ip = clientIp || getClientIp(req);
+
+    // Safely parse the extra field to extract latitude and longitude
+    let latitude = null;
+    let longitude = null;
+    try {
+      const extraData = JSON.parse(extra);
+      latitude = +extraData.latitude || null;
+      longitude = +extraData.longitude || null;
+    } catch (e) {
+      console.error("Failed to parse extra data:", e);
+    }
 
     // Parse ispinfo and clean it
     let cleanedIspInfo = null;
@@ -40,7 +51,8 @@ const telemetryController = async (req, res, next) => {
     console.log("Telemetry processed data:", {
       ip,
       ispinfo: cleanedIspInfo,
-      extra,
+      latitude,
+      longitude,
       ua,
       lang,
       dl,
@@ -71,14 +83,15 @@ const telemetryController = async (req, res, next) => {
 
     // Insert data
     const query = `
-            INSERT INTO speedtest_users (timestamp, ip, ispinfo, extra, ua, lang, dl, ul, ping, jitter, log)
-            VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            INSERT INTO speedtest_users (timestamp, ip, ispinfo, latitude, longitude, ua, lang, dl, ul, ping, jitter, log)
+            VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING id
         `;
     const values = [
       ip,
       cleanedIspInfo,
-      extra,
+      latitude,
+      longitude,
       ua,
       lang,
       dl.toString(),
