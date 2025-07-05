@@ -15,7 +15,26 @@ const parseSpeed = (speed) => {
     return isNaN(value) ? 0 : value;
 };
 
+// Helper function to clean ISP name
+const cleanIspName = (rawIspInfo) => {
+    if (!rawIspInfo || !rawIspInfo.as_name) {
+        return null;
+    }
+    const asName = rawIspInfo.as_name.toLowerCase();
+    if (asName.includes('globacom')) {
+        return 'GLO';
+    } else if (asName.includes('mtn')) {
+        return 'MTN';
+    } else if (asName.includes('airtel')) {
+        return 'Airtel';
+    } else if (asName.includes('9mobile') || asName.includes('etisalat')) {
+        return '9mobile';
+    }
+    return rawIspInfo.as_name; // Return original if no specific match
+};
+
 module.exports = {
     getClientIp,
     parseSpeed,
+    cleanIspName,
 }
