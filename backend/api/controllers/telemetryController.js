@@ -1,5 +1,5 @@
 const pool = require("../models/pool");
-const { getClientIp } = require("../utils/helper");
+const { getClientIp, cleanIspName } = require("../utils/helper");
 
 const telemetryController = async (req, res, next) => {
   // Log request headers and raw body for debugging
@@ -25,10 +25,21 @@ const telemetryController = async (req, res, next) => {
     const lang = req.headers["accept-language"] || "";
     let ip = clientIp || getClientIp(req);
 
+    // Parse ispinfo and clean it
+    let cleanedIspInfo = null;
+    try {
+        const parsedIspInfo = JSON.parse(ispinfo);
+        if (parsedIspInfo && parsedIspInfo.rawIspInfo) {
+            cleanedIspInfo = cleanIspName(parsedIspInfo.rawIspInfo);
+        }
+    } catch (e) {
+        console.error("Failed to parse ispinfo:", e);
+    }
+
     // Log processed data
     console.log("Telemetry processed data:", {
       ip,
-      ispinfo,
+      ispinfo: cleanedIspInfo,
       extra,
       ua,
       lang,
@@ -66,7 +77,7 @@ const telemetryController = async (req, res, next) => {
         `;
     const values = [
       ip,
-      ispinfo,
+      cleanedIspInfo,
       extra,
       ua,
       lang,
