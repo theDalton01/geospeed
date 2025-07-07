@@ -1,5 +1,5 @@
 import "./css/style.css";
-import { createTestPage } from "./js/dom.js";
+import { createTestPage } from "./js/testPage.js";
 import { initUI, startStop } from "./js/speedtest-integration.js";
 import { handleLocationModal } from "./js/modal.js";
 
