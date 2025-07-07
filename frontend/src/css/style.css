@@ -1,0 +1,371 @@
+/*
+  Josh's Custom CSS Reset
+  https://www.joshwcomeau.com/css/custom-css-reset/
+*/
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+* {
+    margin: 0;
+}
+
+body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+    font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    overflow-wrap: break-word;
+}
+
+p {
+    text-wrap: pretty;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    text-wrap: balance;
+}
+
+#root,
+#__next {
+    isolation: isolate;
+}
+
+/* author's styles */
+html,
+body {
+  border: none;
+  padding: 0;
+  margin: 0;
+  /* background: #ffffff; */
+  background-color: #131313;
+  color: whitesmoke;
+}
+
+body {
+  text-align: center;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+    sans-serif;
+}
+
+.container {
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+footer {
+  margin-top: auto;
+  margin-bottom: 1em;
+}
+
+h1 {
+  color: #404040;
+}
+
+header {
+  padding: 1em;
+	display: flex;
+  justify-content: space-between;
+}
+
+header img {
+  width: 30px;
+  height: auto;
+}
+
+button#cta {
+  background: none;
+  background-color: greenyellow;
+  border: none;
+  border-radius: 0.3em;
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+}
+
+#startStopBtn {
+  display: inline-block;
+  margin: 0 auto;
+  color: black;
+  font-weight: 500;
+  background-color: greenyellow;
+  border-radius: 0.3em;
+  transition: all 0.3s;
+  box-sizing: border-box;
+  width: 8em;
+  height: 3em;
+  line-height: 2.7em;
+  cursor: pointer;
+  margin-bottom: 4em;
+}
+
+#startStopBtn:hover {
+  box-shadow: 0 0 2em rgba(0, 0, 0, 0.1), inset 0 0 1em rgba(0, 0, 0, 0.1);
+}
+
+#startStopBtn.running {
+  background-color: #ff3030;
+  color: #ffffff;
+}
+
+#startStopBtn:before {
+  content: "Start";
+}
+
+#startStopBtn.running:before {
+  content: "Abort";
+}
+
+a {
+	text-decoration: underline;
+	color: #ccff33;
+}
+
+#testWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#test {
+  margin-top: 8em;
+  margin-bottom: 8em;
+}
+
+div.testArea {
+  display: inline-block;
+  width: 16em;
+  height: 12.5em;
+  position: relative;
+  box-sizing: border-box;
+}
+
+div.testArea2 {
+  display: inline-block;
+  width: 14em;
+  height: 7em;
+  position: relative;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+div.testArea div.testName {
+  position: absolute;
+  top: 8.5em;
+  font-weight: 500;
+  left: 0;
+  width: 100%;
+  font-size: 1.4em;
+  z-index: 9;
+}
+div.testArea2 div.testName {
+  display: block;
+  text-align: center;
+  font-size: 1.4em;
+  font-weight: 500;
+}
+
+div.testArea div.meterText {
+  position: absolute;
+  bottom: 1.55em;
+  left: 0;
+  width: 100%;
+  font-size: 2.5em;
+  z-index: 9;
+}
+
+div.testArea2 div.meterText {
+  display: inline-block;
+  font-size: 2.5em;
+}
+
+div.meterText:empty:before {
+  content: "0.00";
+}
+
+div.testArea div.unit {
+  position: absolute;
+  bottom: 2em;
+  left: 0;
+  width: 100%;
+  z-index: 9;
+}
+
+div.testArea2 div.unit {
+  display: inline-block;
+}
+
+div.testArea canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+div.testGroup {
+  display: block;
+  margin: 0 auto;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #1e1e1e;
+    padding: 2em;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-content h2 {
+    margin-bottom: 0.5em;
+}
+
+.modal-content p {
+    margin-bottom: 1.5em;
+    line-height: 1.6;
+}
+
+.modal-content button {
+    padding: 0.8em 1.5em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 0 0.5em;
+}
+
+#allowLocation {
+    background-color: #ccff33;
+    color: #131313;
+}
+
+#denyLocation {
+    background-color: #333;
+    color: whitesmoke;
+}
+
+.main-content {
+    margin: 2em 0;
+}
+
+.location-input {
+    width: 100%;
+    background-color: #171717;
+    color: white;
+    border: 2px solid #333;
+    padding: 1em;
+    border-radius: 8px;
+    margin-bottom: 1em;
+}
+
+.location-input:focus {
+  outline: none;
+  border: 2px solid white;
+}
+
+.check-btn, #startTestBtn {
+    background-color: #ccff33;
+    color: #131313;
+    border: none;
+    padding: 1em 2em;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.isp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.isp-card {
+    display: flex;
+    align-items: center;
+    background-color: #141313;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.isp-logo-container {
+    background-color: #ccff33;
+    border-radius: 50%;
+    padding: 0.5em;
+    margin-right: 1em;
+}
+
+.isp-logo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.isp-name-container {
+    flex-grow: 1;
+}
+
+.isp-name {
+    color: whitesmoke;
+}
+
+.avg-speed {
+    color: #ccff33;
+}
+
+@media all and (max-width: 40em) {
+  body {
+    font-size: 0.8em;
+  }
+}
