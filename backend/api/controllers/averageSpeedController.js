@@ -3,32 +3,44 @@ const { parseSpeed } = require("../utils/helper");
 
 const averageSpeed = async (req, res, next) => {
   try {
-    const { ip } = req.query;
+    const { latitude, longitude } = req.query;
 
-    // Validate IP parameter
-    if (ip && !ip.includes(".") && !ip.includes(":")) {
-      return next(new Error("Invalid IP address format"));
+    // Validate latitude and longitude parameters
+    if (!latitude || !longitude) {
+      return next(new Error("Latitude and Longitude are required."));
     }
 
     const query = `
             SELECT
+                ispinfo,
                 AVG(dl::numeric) as avg_download,
                 AVG(ul::numeric) as avg_upload,
-                AVG(ping::numeric) as avg_ping
+                COUNT(*) as entry_count
             FROM speedtest_users
-            WHERE ${ip ? `ip = $1` : "true"}
+            WHERE latitude = $1 AND longitude = $2
+            GROUP BY ispinfo;
         `;
 
-    const values = ip ? [ip] : [];
+    const values = [latitude, longitude];
     const { rows } = await pool.query(query, values);
 
-    // Convert averages to numbers
-    const averages = rows[0];
-    res.json({
-      avg_download: parseSpeed(averages.avg_download),
-      avg_upload: parseSpeed(averages.avg_upload),
-      avg_ping: parseSpeed(averages.avg_ping),
+    const result = rows.map((row) => {
+      if (row.entry_count < 20) {
+        return {
+          ispinfo: row.ispinfo,
+          average_download: "Not Enough Data",
+          average_upload: "Not Enough Data",
+        };
+      } else {
+        return {
+          ispinfo: row.ispinfo,
+          average_download: parseSpeed(row.avg_download),
+          average_upload: parseSpeed(row.avg_upload),
+        };
+      }
     });
+
+    res.json(result);
   } catch (err) {
     next(new Error("Failed to calculate average speed"));
   }
