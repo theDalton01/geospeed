@@ -63,6 +63,10 @@ h6 {
 }
 
 /* author's styles */
+:root {
+  --primary-color: #ccff33;
+}
+
 html,
 body {
   border: none;
@@ -112,7 +116,7 @@ header img {
 
 button#cta {
   background: none;
-  background-color: greenyellow;
+  background-color: var(--primary-color);
   border: none;
   border-radius: 0.3em;
   font: inherit;
@@ -125,7 +129,7 @@ button#cta {
   margin: 0 auto;
   color: black;
   font-weight: 500;
-  background-color: greenyellow;
+  background-color: var(--primary-color);
   border-radius: 0.3em;
   transition: all 0.3s;
   box-sizing: border-box;
@@ -155,7 +159,7 @@ button#cta {
 
 a {
 	text-decoration: underline;
-	color: #ccff33;
+	color: var(--primary-color);
 }
 
 #testWrapper {
@@ -287,7 +291,7 @@ div.testGroup {
 }
 
 #allowLocation {
-    background-color: #ccff33;
+    background-color: var(--primary-color);
     color: #131313;
 }
 
@@ -316,7 +320,7 @@ div.testGroup {
 }
 
 .check-btn, #startTestBtn {
-    background-color: #ccff33;
+    background-color: var(--primary-color);
     color: #131313;
     border: none;
     padding: 1em 2em;
@@ -340,7 +344,7 @@ div.testGroup {
 }
 
 .isp-logo-container {
-    background-color: #ccff33;
+    background-color: var(--primary-color);
     border-radius: 50%;
     padding: 0.5em;
     margin-right: 1em;
@@ -349,7 +353,7 @@ div.testGroup {
 .isp-logo {
     width: 30px;
     height: 30px;
-    border-radius: 50%;
+    padding: 2px;
 }
 
 .isp-name-container {
@@ -361,7 +365,37 @@ div.testGroup {
 }
 
 .avg-speed {
-    color: #ccff33;
+    color: var(--primary-color);
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3; /* Light grey */
+  border-top: 4px solid var(--primary-color); /* Green */
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto; /* Center the spinner */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.info {
+  cursor: pointer;
+}
+
+.modal-close-btn {
+    background-color: var(--primary-color);
+    color: #131313;
+    border: none;
+    padding: 0.8em 1.5em;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    margin-top: 1em; /* Add some space above the button */
 }
 
 @media all and (max-width: 40em) {
