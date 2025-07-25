@@ -65,6 +65,7 @@ h6 {
 /* author's styles */
 :root {
   --primary-color: #ccff33;
+  --upload-speed-color: #87CEEB; /* Light blue for upload speed */
 }
 
 html,
@@ -114,15 +115,7 @@ header img {
   height: auto;
 }
 
-button#cta {
-  background: none;
-  background-color: var(--primary-color);
-  border: none;
-  border-radius: 0.3em;
-  font: inherit;
-  cursor: pointer;
-  outline: inherit;
-}
+
 
 #startStopBtn {
   display: inline-block;
@@ -366,6 +359,23 @@ div.testGroup {
 
 .avg-speed {
     color: var(--primary-color);
+}
+
+.speed-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2em;
+}
+
+.avg-speed.download {
+    font-weight: bold;
+}
+
+.avg-speed.upload {
+    font-size: 0.9em;
+    opacity: 0.8;
+    color: var(--upload-speed-color);
 }
 
 .loading-spinner {
