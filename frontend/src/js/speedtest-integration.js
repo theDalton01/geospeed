@@ -5,35 +5,46 @@ function I(i) {
 }
 
 //INITIALIZE SPEEDTEST WITH CUSTOM BACKEND URL
-var s = new Speedtest(); //create speedtest object
+var s = null; // Will be initialized when needed
 
-// Set the backend URLs to your server
-// const baseUrl = 'https://netscope-production.up.railway.app/speedtest/backend';
-const baseUrl = "https://api-staging-bf57.up.railway.app/speedtest/backend";
-s.setParameter("url_dl", baseUrl + "/garbage.php");
-s.setParameter("url_ul", baseUrl + "/empty.php");
-s.setParameter("url_ping", baseUrl + "/empty.php");
-s.setParameter("url_getIp", baseUrl + "/getIP.php");
+function initializeSpeedtest() {
+  if (s !== null) return s; // Already initialized
 
-// Optional: Set telemetry to basic
-s.setParameter("telemetry_level", "basic");
-s.setParameter(
-  "url_telemetry",
-  "https://api-staging-bf57.up.railway.app/speedtest/results/telemetry.php"
-);
-// s.setParameter("url_telemetry", "https://netscope-production.up.railway.app/speedtest/results/telemetry.php");
+  try {
+    s = new Speedtest(); //create speedtest object
 
-// Add location data to telemetry if available
-const locationData = {
-  latitude: 1.23,
-  longitude: 4.56,
-  accuracy: "high",
-};
+    // Set the backend URLs to your server
+    // const baseUrl = 'https://netscope-production.up.railway.app/speedtest/backend';
+    const baseUrl = "https://api-staging-bf57.up.railway.app/speedtest/backend";
+    s.setParameter("url_dl", baseUrl + "/garbage.php");
+    s.setParameter("url_ul", baseUrl + "/empty.php");
+    s.setParameter("url_ping", baseUrl + "/empty.php");
+    s.setParameter("url_getIp", baseUrl + "/getIP.php");
 
-console.log(locationData);
-console.log(baseUrl);
-s.setParameter("telemetry_extra", JSON.stringify(locationData));
-console.log(s._settings);
+    // Optional: Set telemetry to basic
+    s.setParameter("telemetry_level", "basic");
+    s.setParameter(
+      "url_telemetry",
+      "https://api-staging-bf57.up.railway.app/speedtest/results/telemetry.php"
+    );
+    // s.setParameter("url_telemetry", "https://netscope-production.up.railway.app/speedtest/results/telemetry.php");
+
+    // Add location data to telemetry if available
+    const locationData = {
+      latitude: 1.23,
+      longitude: 4.56,
+      accuracy: "high",
+    };
+
+    s.setParameter("telemetry_extra", JSON.stringify(locationData));
+
+    return s;
+  } catch (error) {
+    console.error("Failed to initialize Speedtest:", error);
+    s = null;
+    return null;
+  }
+}
 
 var meterBk = /Trident.*rv:(\d+\.\d+)/i.test(navigator.userAgent)
   ? "#EAEAEA"
@@ -100,6 +111,15 @@ function format(d) {
 //UI CODE
 var uiData = null;
 export function startStop() {
+  // Initialize speedtest if not already done
+  if (s === null) {
+    s = initializeSpeedtest();
+    if (s === null) {
+      console.error("Failed to initialize speedtest. Please try again.");
+      return;
+    }
+  }
+
   if (s.getState() == 3) {
     //speedtest is running, abort
     s.abort();
@@ -122,32 +142,78 @@ export function startStop() {
 
 //this function reads the data sent back by the test and updates the UI
 function updateUI(forced) {
-  if (!forced && s.getState() != 3) return;
+  if (!forced && (s === null || s.getState() != 3)) return;
   if (uiData == null) return;
   var status = uiData.testState;
-  I("ip").textContent = uiData.clientIp;
-  I("dlText").textContent =
-    status == 1 && uiData.dlStatus == 0 ? "..." : format(uiData.dlStatus);
-  drawMeter(
-    I("dlMeter"),
-    mbpsToAmount(Number(uiData.dlStatus * (status == 1 ? oscillate() : 1))),
-    meterBk,
-    dlColor,
-    Number(uiData.dlProgress),
-    progColor
-  );
-  I("ulText").textContent =
-    status == 3 && uiData.ulStatus == 0 ? "..." : format(uiData.ulStatus);
-  drawMeter(
-    I("ulMeter"),
-    mbpsToAmount(Number(uiData.ulStatus * (status == 3 ? oscillate() : 1))),
-    meterBk,
-    ulColor,
-    Number(uiData.ulProgress),
-    progColor
-  );
-  I("pingText").textContent = format(uiData.pingStatus);
-  I("jitText").textContent = format(uiData.jitterStatus);
+
+  // Parse ISP from clientIp and display formatted text
+  const clientIpText = uiData.clientIp;
+  let extractedIspName = null;
+
+  // Extract ISP name from the format: "IP - ISP NAME Communication limited, Nigeria"
+  const ispMatch = clientIpText.match(/\d+\.\d+\.\d+\.\d+\s*-\s*(.+?)(?:\s*Communication\s*[Ll]imited)?,\s*Nigeria/i);
+  if (ispMatch && ispMatch[1]) {
+    extractedIspName = ispMatch[1].trim();
+  }
+
+  const ipArea = I("ipArea");
+  if (ipArea) {
+    ipArea.innerHTML = ""; // Clear previous content
+
+    if (extractedIspName) {
+      // Display formatted ISP text
+      const ipSpan = document.createElement("span");
+      ipSpan.id = "ip";
+      ipSpan.textContent = `Internet Service Provider: ${extractedIspName}`;
+      ipArea.appendChild(ipSpan);
+    } else {
+      // Fallback to displaying the original text if extraction fails
+      const ipSpan = document.createElement("span");
+      ipSpan.id = "ip";
+      ipSpan.textContent = clientIpText;
+      ipArea.appendChild(ipSpan);
+    }
+  }
+
+  const dlText = I("dlText");
+  const ulText = I("ulText");
+  const pingText = I("pingText");
+  const jitText = I("jitText");
+  const dlMeter = I("dlMeter");
+  const ulMeter = I("ulMeter");
+
+  if (dlText) {
+    dlText.textContent = status == 1 && uiData.dlStatus == 0 ? "..." : format(uiData.dlStatus);
+  }
+  if (dlMeter) {
+    drawMeter(
+      dlMeter,
+      mbpsToAmount(Number(uiData.dlStatus * (status == 1 ? oscillate() : 1))),
+      meterBk,
+      dlColor,
+      Number(uiData.dlProgress),
+      progColor
+    );
+  }
+  if (ulText) {
+    ulText.textContent = status == 3 && uiData.ulStatus == 0 ? "..." : format(uiData.ulStatus);
+  }
+  if (ulMeter) {
+    drawMeter(
+      ulMeter,
+      mbpsToAmount(Number(uiData.ulStatus * (status == 3 ? oscillate() : 1))),
+      meterBk,
+      ulColor,
+      Number(uiData.ulProgress),
+      progColor
+    );
+  }
+  if (pingText) {
+    pingText.textContent = format(uiData.pingStatus);
+  }
+  if (jitText) {
+    jitText.textContent = format(uiData.jitterStatus);
+  }
 }
 function oscillate() {
   return 1 + 0.02 * Math.sin(Date.now() / 100);
@@ -169,11 +235,20 @@ function frame() {
 frame(); //start frame loop
 //function to (re)initialize UI
 export function initUI() {
-  drawMeter(I("dlMeter"), 0, meterBk, dlColor, 0);
-  drawMeter(I("ulMeter"), 0, meterBk, ulColor, 0);
-  I("dlText").textContent = "";
-  I("ulText").textContent = "";
-  I("pingText").textContent = "";
-  I("jitText").textContent = "";
-  I("ip").textContent = "";
+  // Check if elements exist before trying to access them
+  const dlMeter = I("dlMeter");
+  const ulMeter = I("ulMeter");
+  const dlText = I("dlText");
+  const ulText = I("ulText");
+  const pingText = I("pingText");
+  const jitText = I("jitText");
+  const ip = I("ip");
+
+  if (dlMeter) drawMeter(dlMeter, 0, meterBk, dlColor, 0);
+  if (ulMeter) drawMeter(ulMeter, 0, meterBk, ulColor, 0);
+  if (dlText) dlText.textContent = "";
+  if (ulText) ulText.textContent = "";
+  if (pingText) pingText.textContent = "";
+  if (jitText) jitText.textContent = "";
+  if (ip) ip.textContent = "";
 }

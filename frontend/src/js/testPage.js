@@ -15,6 +15,7 @@ export function createTestPage() {
   const header = document.createElement("header");
   const ctaButton = document.createElement("button");
   ctaButton.id = "cta";
+  ctaButton.className = "check-btn";
   ctaButton.textContent = "Check Average Speed";
   ctaButton.addEventListener("click", () => {
     createLocationPage();
@@ -145,7 +146,8 @@ export function createTestPage() {
   container.appendChild(testWrapper);
   container.appendChild(footer);
 
+  // Give more time for everything to initialize properly
   setTimeout(function () {
     initUI();
-  }, 100);
+  }, 300);
 }
