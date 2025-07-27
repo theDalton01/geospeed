@@ -6,16 +6,16 @@
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 * {
-    margin: 0;
+  margin: 0;
 }
 
 body {
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 img,
@@ -23,15 +23,15 @@ picture,
 video,
 canvas,
 svg {
-    display: block;
-    max-width: 100%;
+  display: block;
+  max-width: 100%;
 }
 
 input,
 button,
 textarea,
 select {
-    font: inherit;
+  font: inherit;
 }
 
 p,
@@ -41,11 +41,11 @@ h3,
 h4,
 h5,
 h6 {
-    overflow-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 p {
-    text-wrap: pretty;
+  text-wrap: pretty;
 }
 
 h1,
@@ -54,18 +54,19 @@ h3,
 h4,
 h5,
 h6 {
-    text-wrap: balance;
+  text-wrap: balance;
 }
 
 #root,
 #__next {
-    isolation: isolate;
+  isolation: isolate;
 }
 
 /* author's styles */
 :root {
   --primary-color: #ccff33;
-  --upload-speed-color: #87CEEB; /* Light blue for upload speed */
+  --upload-speed-color: #87CEEB;
+  /* Light blue for upload speed */
 }
 
 html,
@@ -106,7 +107,7 @@ h1 {
 
 header {
   padding: 1em;
-	display: flex;
+  display: flex;
   justify-content: space-between;
 }
 
@@ -114,8 +115,6 @@ header img {
   width: 30px;
   height: auto;
 }
-
-
 
 #startStopBtn {
   display: inline-block;
@@ -151,8 +150,8 @@ header img {
 }
 
 a {
-	text-decoration: underline;
-	color: var(--primary-color);
+  text-decoration: underline;
+  color: var(--primary-color);
 }
 
 #testWrapper {
@@ -193,6 +192,7 @@ div.testArea div.testName {
   font-size: 1.4em;
   z-index: 9;
 }
+
 div.testArea2 div.testName {
   display: block;
   text-align: center;
@@ -245,66 +245,66 @@ div.testGroup {
 }
 
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .modal-content {
-    background-color: #1e1e1e;
-    padding: 2em;
-    border-radius: 12px;
-    text-align: center;
-    max-width: 400px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  background-color: #1e1e1e;
+  padding: 2em;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .modal-content h2 {
-    margin-bottom: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 .modal-content p {
-    margin-bottom: 1.5em;
-    line-height: 1.6;
+  margin-bottom: 1.5em;
+  line-height: 1.6;
 }
 
 .modal-content button {
-    padding: 0.8em 1.5em;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    margin: 0 0.5em;
+  padding: 0.8em 1.5em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0 0.5em;
 }
 
 #allowLocation {
-    background-color: var(--primary-color);
-    color: #131313;
+  background-color: var(--primary-color);
+  color: #131313;
 }
 
 #denyLocation {
-    background-color: #333;
-    color: whitesmoke;
+  background-color: #333;
+  color: whitesmoke;
 }
 
 .main-content {
-    margin: 2em 0;
+  margin: 2em 0;
 }
 
 .location-input {
-    width: 100%;
-    background-color: #171717;
-    color: white;
-    border: 2px solid #333;
-    padding: 1em;
-    border-radius: 8px;
-    margin-bottom: 1em;
+  width: 100%;
+  background-color: #171717;
+  color: white;
+  border: 2px solid #333;
+  padding: 1em;
+  border-radius: 8px;
+  margin-bottom: 1em;
 }
 
 .location-input:focus {
@@ -312,85 +312,96 @@ div.testGroup {
   border: 2px solid white;
 }
 
-.check-btn, #startTestBtn {
-    background-color: var(--primary-color);
-    color: #131313;
-    border: none;
-    padding: 1em 2em;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+
+
+.check-btn,
+#startTestBtn {
+  background-color: var(--primary-color);
+  color: #131313;
+  border: none;
+  padding: 1em 2em;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .isp-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
 }
 
 .isp-card {
-    display: flex;
-    align-items: center;
-    background-color: #141313;
-    padding: 4px;
-    border-radius: 8px;
+  display: flex;
+  align-items: center;
+  background-color: #141313;
+  padding: 4px;
+  border-radius: 8px;
 }
 
 .isp-logo-container {
-    background-color: var(--primary-color);
-    border-radius: 50%;
-    padding: 0.5em;
-    margin-right: 1em;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  padding: 0.5em;
+  margin-right: 1em;
 }
 
 .isp-logo {
-    width: 30px;
-    height: 30px;
-    padding: 2px;
+  width: 30px;
+  height: 30px;
+  padding: 2px;
 }
 
 .isp-name-container {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .isp-name {
-    color: whitesmoke;
+  color: whitesmoke;
 }
 
 .avg-speed {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .speed-info-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2em;
 }
 
 .avg-speed.download {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .avg-speed.upload {
-    font-size: 0.9em;
-    opacity: 0.8;
-    color: var(--upload-speed-color);
+  font-size: 0.9em;
+  opacity: 0.8;
+  color: var(--upload-speed-color);
 }
 
 .loading-spinner {
-  border: 4px solid #f3f3f3; /* Light grey */
-  border-top: 4px solid var(--primary-color); /* Green */
+  border: 4px solid #f3f3f3;
+  /* Light grey */
+  border-top: 4px solid var(--primary-color);
+  /* Green */
   border-radius: 50%;
   width: 30px;
   height: 30px;
   animation: spin 1s linear infinite;
-  margin: 20px auto; /* Center the spinner */
+  margin: 20px auto;
+  /* Center the spinner */
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .info {
@@ -398,14 +409,15 @@ div.testGroup {
 }
 
 .modal-close-btn {
-    background-color: var(--primary-color);
-    color: #131313;
-    border: none;
-    padding: 0.8em 1.5em;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    margin-top: 1em; /* Add some space above the button */
+  background-color: var(--primary-color);
+  color: #131313;
+  border: none;
+  padding: 0.8em 1.5em;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-top: 1em;
+  /* Add some space above the button */
 }
 
 @media all and (max-width: 40em) {
