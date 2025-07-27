@@ -20,9 +20,10 @@ const initializeDatabase = async (retries = 5, delay = 5000) => {
       await client.query("SELECT NOW()");
       console.log("Database connection successful");
 
-      // Create tables
+      // Create tables with PostGIS support
       await client.query(`
                 CREATE EXTENSION IF NOT EXISTS plpgsql;
+                CREATE EXTENSION IF NOT EXISTS postgis;
                 
                 CREATE TABLE IF NOT EXISTS speedtest_users (
                     id SERIAL PRIMARY KEY,
@@ -31,6 +32,7 @@ const initializeDatabase = async (retries = 5, delay = 5000) => {
                     ispinfo TEXT,
                     latitude DECIMAL(10, 8),
                     longitude DECIMAL(11, 8),
+                    location GEOGRAPHY(POINT, 4326),
                     ua TEXT NOT NULL,
                     lang TEXT NOT NULL,
                     dl TEXT,
@@ -42,6 +44,7 @@ const initializeDatabase = async (retries = 5, delay = 5000) => {
 
                 CREATE INDEX IF NOT EXISTS idx_speedtest_users_timestamp ON speedtest_users("timestamp");
                 CREATE INDEX IF NOT EXISTS idx_speedtest_users_ip ON speedtest_users(ip);
+                CREATE INDEX IF NOT EXISTS idx_speedtest_users_location ON speedtest_users USING GIST (location);
             `);
       console.log("Database tables created/checked");
       return "seeded successfully";
