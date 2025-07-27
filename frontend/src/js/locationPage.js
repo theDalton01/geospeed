@@ -7,9 +7,30 @@ import gloLogo from "../../assets/glo.svg";
 import airtelLogo from "../../assets/airtel.svg";
 import ni9MobileLogo from "../../assets/9mobile.svg";
 
-// A global variable to hold the complete details of the location selected by the user.
-// This will be populated by the Google Places Autocomplete listener.
-let selectedPlace = null;
+// Beta test locations for FUTA
+const BETA_LOCATIONS = [
+  {
+    name: "School of Engineering and Engineering Technology, FUTA (SEET)",
+    shortName: "SEET",
+    latitude: 7.30334,
+    longitude: 5.13612
+  },
+  {
+    name: "School of Agriculture and Agricultural Engineering, FUTA (SAAT)",
+    shortName: "SAAT",
+    latitude: 7.30176,
+    longitude: 5.13923
+  },
+  {
+    name: "School of Computing, FUTA (SOC)",
+    shortName: "SOC",
+    latitude: 7.30000, // Placeholder value
+    longitude: 5.13500 // Placeholder value
+  }
+];
+
+// Export beta locations for use in speedtest-integration.js
+export { BETA_LOCATIONS };
 
 /**
  * Dynamically creates and renders the "Check Location Speed" page.
@@ -44,21 +65,27 @@ export function createLocationPage() {
   const mainContent = document.createElement("div");
   mainContent.className = "main-content";
 
-  // Create the text input field for location searching.
+  // Create the text input field for location searching (no datalist to avoid dropdown arrow)
   const locationInput = document.createElement("input");
   locationInput.type = "text";
-  locationInput.placeholder = "e.g. Lagos, NG";
+  locationInput.placeholder = "e.g. SEET, SAAT, SOC";
   locationInput.className = "location-input";
 
-  // --- Google Places API Integration ---
-  // Attach the Google Places Autocomplete functionality to the input field.
-  // This enables location suggestions as the user types.
-  const autocomplete = new google.maps.places.Autocomplete(locationInput);
+  // Handle input changes to auto-expand acronyms
+  locationInput.addEventListener("input", (e) => {
+    const inputValue = e.target.value.trim();
 
-  // Add a listener that fires when the user selects a place from the autocomplete dropdown.
-  autocomplete.addListener("place_changed", () => {
-    // When a place is selected, get the full place details and store them.
-    selectedPlace = autocomplete.getPlace();
+    // Check if user typed an acronym and auto-expand to full name
+    const matchingLocation = BETA_LOCATIONS.find(location =>
+      location.shortName.toLowerCase() === inputValue.toLowerCase()
+    );
+
+    if (matchingLocation && inputValue.length <= 4) { // Only expand short inputs (acronyms)
+      // Use setTimeout to avoid conflicts with datalist
+      setTimeout(() => {
+        locationInput.value = matchingLocation.name;
+      }, 100);
+    }
   });
 
   // Create the "Check" button.
@@ -71,36 +98,42 @@ export function createLocationPage() {
     // Show loading spinner and hide ISP list
     loadingSpinner.style.display = "block";
     ispList.style.display = "none";
-    
-    // test functionality //
-    selectedPlace = {
-      geometry: {
-        location: {
-          lat: () => 1.23,
-          lng: () => 4.56,
-        },
-      },
-    };
 
-    // Ensure a place has been selected and has geometry data.
-    if (selectedPlace && selectedPlace.geometry) {
-      // Extract the latitude and longitude from the selected place's geometry.
-      const lat = selectedPlace.geometry.location.lat();
-      const lng = selectedPlace.geometry.location.lng();
+    // Get the input value and find matching location
+    const inputValue = locationInput.value.trim();
+    let selectedLocation = null;
 
-      // Log the coordinates to the console.
-      // In a real application, this is where you would send the lat and lng to your backend.
-      console.log(`Latitude: ${lat}, Longitude: ${lng}`);
+    // Find location by short name or full name
+    selectedLocation = BETA_LOCATIONS.find(location =>
+      location.shortName.toLowerCase() === inputValue.toLowerCase() ||
+      location.name.toLowerCase() === inputValue.toLowerCase()
+    );
 
-      // Simulate backend call
-      setTimeout(() => {
-        loadingSpinner.style.display = "none";
-        ispList.style.display = "block";
-      }, 2000); // Simulate 2 seconds delay
+    if (selectedLocation) {
+      const lat = selectedLocation.latitude;
+      const lng = selectedLocation.longitude;
+
+      console.log(`Selected: ${selectedLocation.name} - Lat: ${lat}, Lng: ${lng}`);
+
+      // Call the backend API
+      getAverageSpeeds(lat, lng)
+        .then(speedData => {
+          loadingSpinner.style.display = "none";
+          ispList.style.display = "block";
+          updateIspCards(speedData); // Update ISP cards with fetched data
+        })
+        .catch(error => {
+          console.error("Error fetching speed data:", error);
+          loadingSpinner.style.display = "none";
+          // Optionally, display an error message to the user
+        });
     } else {
-      // If no location was selected, inform the user/developer.
-      console.log("No location selected");
+      // If no valid location was selected, inform the user
+      console.log("Please select a valid location from the list");
       loadingSpinner.style.display = "none"; // Hide spinner if no location
+
+      // Show error message to user
+      alert("Please select a valid location: SEET, SAAT, or SOC");
     }
   });
 
@@ -127,40 +160,80 @@ export function createLocationPage() {
     { name: "9mobile", logo: ni9MobileLogo },
   ];
 
-  // Loop through the array to create a card for each ISP.
-  isps.forEach((isp) => {
-    const ispCard = document.createElement("div");
-    ispCard.className = "isp-card";
+  // Function to fetch average speeds from the backend
+  async function getAverageSpeeds(latitude, longitude) {
+    try {
+      const baseUrl = "https://api-staging-bf57.up.railway.app";
+      const response = await fetch(`${baseUrl}/api/average-speed?latitude=${latitude}&longitude=${longitude}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(data);
+      return data;
+    } catch (error) {
+      console.error("Failed to fetch average speeds:", error);
+      throw error; // Re-throw to be caught by the .catch in the event listener
+    }
+  }
 
-    const ispLogoContainer = document.createElement("div");
-    ispLogoContainer.className = "isp-logo-container";
-    // Create an img element for the logo.
-    const ispLogo = document.createElement("img");
-    ispLogo.className = "isp-logo";
-    // Set the src to the imported logo file.
-    ispLogo.src = isp.logo;
-    ispLogo.alt = `${isp.name} logo`; // Add alt text for accessibility.
-    ispLogoContainer.appendChild(ispLogo);
+  // Function to update ISP cards with actual speed data
+  function updateIspCards(speedData) {
+    ispList.innerHTML = ""; // Clear existing cards
+    isps.forEach((isp) => {
+      const ispCard = document.createElement("div");
+      ispCard.className = "isp-card";
 
-    const ispNameContainer = document.createElement("div");
-    ispNameContainer.className = "isp-name-container";
-    const ispName = document.createElement("span");
-    ispName.className = "isp-name";
-    ispName.textContent = isp.name;
-    ispNameContainer.appendChild(ispName);
+      const ispLogoContainer = document.createElement("div");
+      ispLogoContainer.className = "isp-logo-container";
+      const ispLogo = document.createElement("img");
+      ispLogo.className = "isp-logo";
+      ispLogo.src = isp.logo;
+      ispLogo.alt = `${isp.name} logo`;
+      ispLogoContainer.appendChild(ispLogo);
 
-    const avgSpeed = document.createElement("span");
-    avgSpeed.className = "avg-speed";
-    avgSpeed.textContent = "10 Mbps"; // Using placeholder text for the speed.
+      const ispNameContainer = document.createElement("div");
+      ispNameContainer.className = "isp-name-container";
+      const ispName = document.createElement("span");
+      ispName.className = "isp-name";
+      ispName.textContent = isp.name;
+      ispNameContainer.appendChild(ispName);
 
-    // Assemble the card by appending the logo, name, and speed.
-    ispCard.appendChild(ispLogoContainer);
-    ispCard.appendChild(ispNameContainer);
-    ispCard.appendChild(avgSpeed);
+      const speedInfoContainer = document.createElement("div");
+      speedInfoContainer.className = "speed-info-container";
 
-    // Add the newly created card to the ISP list.
-    ispList.appendChild(ispCard);
-  });
+      const matchingSpeed = speedData.find(data => data.ispinfo === isp.name);
+
+      // Determine if we should show "Not Enough Data" as a single message
+      const showSingleNoData = !matchingSpeed ||
+        (matchingSpeed.average_download === "Not Enough Data" &&
+          matchingSpeed.average_upload === "Not Enough Data");
+
+      if (showSingleNoData) {
+        const noDataSpan = document.createElement("span");
+        noDataSpan.className = "avg-speed";
+        noDataSpan.textContent = "Not Enough Data";
+        speedInfoContainer.appendChild(noDataSpan);
+      } else {
+        // Display both download and upload speeds
+        const avgDownloadSpeed = document.createElement("span");
+        avgDownloadSpeed.className = "avg-speed download";
+        avgDownloadSpeed.textContent = matchingSpeed.average_download === "Not Enough Data" ? "Not Enough Data" : `${matchingSpeed.average_download.toFixed(2)} Mbps ↓`;
+        speedInfoContainer.appendChild(avgDownloadSpeed);
+
+        const avgUploadSpeed = document.createElement("span");
+        avgUploadSpeed.className = "avg-speed upload";
+        avgUploadSpeed.textContent = matchingSpeed.average_upload === "Not Enough Data" ? "Not Enough Data" : `${matchingSpeed.average_upload.toFixed(2)} Mbps ↑`;
+        speedInfoContainer.appendChild(avgUploadSpeed);
+      }
+
+      ispCard.appendChild(ispLogoContainer);
+      ispCard.appendChild(ispNameContainer);
+      ispCard.appendChild(speedInfoContainer); // Append the new container
+
+      ispList.appendChild(ispCard);
+    });
+  }
 
   //footer
   const footer = document.createElement("footer");

@@ -1,7 +1,37 @@
 import { Speedtest } from "./speedtest.js";
+import { BETA_LOCATIONS } from "./locationPage.js";
 
 function I(i) {
   return document.getElementById(i);
+}
+
+// Function to calculate distance between two coordinates using Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in meters
+}
+
+// Function to check if user is within 200m of any beta location
+function isWithinBetaZone(userLat, userLng) {
+  const RADIUS_METERS = 200;
+
+  for (const location of BETA_LOCATIONS) {
+    const distance = calculateDistance(userLat, userLng, location.latitude, location.longitude);
+    if (distance <= RADIUS_METERS) {
+      console.log(`User is within ${Math.round(distance)}m of ${location.shortName}`);
+      return true;
+    }
+  }
+
+  console.log("User is not within 200m of any beta test location");
+  return false;
 }
 
 //INITIALIZE SPEEDTEST WITH CUSTOM BACKEND URL
@@ -21,22 +51,32 @@ function initializeSpeedtest() {
     s.setParameter("url_ping", baseUrl + "/empty.php");
     s.setParameter("url_getIp", baseUrl + "/getIP.php");
 
-    // Optional: Set telemetry to basic
-    s.setParameter("telemetry_level", "basic");
-    s.setParameter(
-      "url_telemetry",
-      "https://api-staging-bf57.up.railway.app/speedtest/results/telemetry.php"
-    );
-    // s.setParameter("url_telemetry", "https://netscope-production.up.railway.app/speedtest/results/telemetry.php");
+    // Check for location data first
+    let locationData = null;
+    try {
+      const storedLocation = localStorage.getItem('userLocation');
+      if (storedLocation) {
+        locationData = JSON.parse(storedLocation);
+      }
+    } catch (error) {
+      console.error("Error retrieving location data:", error);
+    }
 
-    // Add location data to telemetry if available
-    const locationData = {
-      latitude: 1.23,
-      longitude: 4.56,
-      accuracy: "high",
-    };
-
-    s.setParameter("telemetry_extra", JSON.stringify(locationData));
+    // Only set up telemetry if we have location data AND user is within beta zone
+    if (locationData && isWithinBetaZone(locationData.latitude, locationData.longitude)) {
+      s.setParameter("telemetry_level", "basic");
+      s.setParameter(
+        "url_telemetry",
+        "https://api-staging-bf57.up.railway.app/speedtest/results/telemetry.php"
+      );
+      // s.setParameter("url_telemetry", "https://netscope-production.up.railway.app/speedtest/results/telemetry.php");
+      s.setParameter("telemetry_extra", JSON.stringify(locationData));
+      console.log("Telemetry enabled - user is within beta test zone");
+    } else if (locationData) {
+      console.log("Telemetry disabled - user is outside beta test zones");
+    } else {
+      console.log("Telemetry disabled - no location data available");
+    }
 
     return s;
   } catch (error) {
