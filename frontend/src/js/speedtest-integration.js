@@ -51,39 +51,62 @@ function initializeSpeedtest() {
     s.setParameter("url_ping", baseUrl + "/empty.php");
     s.setParameter("url_getIp", baseUrl + "/getIP.php");
 
-    // Check for location data first
-    let locationData = null;
-    try {
-      const storedLocation = localStorage.getItem('userLocation');
-      if (storedLocation) {
-        locationData = JSON.parse(storedLocation);
-      }
-    } catch (error) {
-      console.error("Error retrieving location data:", error);
-    }
-
-    // Only set up telemetry if we have location data AND user is within beta zone
-    if (locationData && isWithinBetaZone(locationData.latitude, locationData.longitude)) {
-      s.setParameter("telemetry_level", "basic");
-      s.setParameter(
-        "url_telemetry",
-        "https://api-staging-bf57.up.railway.app/speedtest/results/telemetry.php"
-      );
-      // s.setParameter("url_telemetry", "https://netscope-production.up.railway.app/speedtest/results/telemetry.php");
-      s.setParameter("telemetry_extra", JSON.stringify(locationData));
-      console.log("Telemetry enabled - user is within beta test zone");
-    } else if (locationData) {
-      console.log("Telemetry disabled - user is outside beta test zones");
-    } else {
-      console.log("Telemetry disabled - no location data available");
-    }
-
     return s;
   } catch (error) {
     console.error("Failed to initialize Speedtest:", error);
     s = null;
     return null;
   }
+}
+
+// Function to get current location and set up telemetry
+function setupTelemetryWithCurrentLocation(speedtestInstance) {
+  return new Promise((resolve) => {
+    // Check if user has previously granted location permission
+    const hasLocationPermission = localStorage.getItem('hasVisited') === 'true';
+    
+    if (!hasLocationPermission) {
+      console.log("Telemetry disabled - user hasn't granted location permission");
+      resolve();
+      return;
+    }
+
+    // Get fresh location data for this speed test
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        const currentLocationData = {
+          latitude: latitude,
+          longitude: longitude,
+          accuracy: accuracy || "unknown"
+        };
+
+        // Check if current location is within beta zone
+        if (isWithinBetaZone(latitude, longitude)) {
+          speedtestInstance.setParameter("telemetry_level", "basic");
+          speedtestInstance.setParameter(
+            "url_telemetry",
+            "https://api-staging-bf57.up.railway.app/speedtest/results/telemetry.php"
+          );
+          speedtestInstance.setParameter("telemetry_extra", JSON.stringify(currentLocationData));
+          console.log("Telemetry enabled - user is within beta test zone");
+        } else {
+          console.log("Telemetry disabled - user is outside beta test zones");
+        }
+        resolve();
+      },
+      (error) => {
+        console.error("Failed to get current location:", error);
+        console.log("Telemetry disabled - location access failed");
+        resolve();
+      },
+      {
+        timeout: 10000, // 10 second timeout
+        maximumAge: 0,  // Don't use cached location
+        enableHighAccuracy: true
+      }
+    );
+  });
 }
 
 var meterBk = /Trident.*rv:(\d+\.\d+)/i.test(navigator.userAgent)
@@ -169,14 +192,18 @@ export function startStop() {
   } else {
     //test is not running, begin
     I("startStopBtn").className = "running";
-    s.onupdate = function (data) {
-      uiData = data;
-    };
-    s.onend = function (aborted) {
-      I("startStopBtn").className = "";
-      updateUI(true);
-    };
-    s.start();
+    
+    // Get current location and set up telemetry before starting the test
+    setupTelemetryWithCurrentLocation(s).then(() => {
+      s.onupdate = function (data) {
+        uiData = data;
+      };
+      s.onend = function (aborted) {
+        I("startStopBtn").className = "";
+        updateUI(true);
+      };
+      s.start();
+    });
   }
 }
 
