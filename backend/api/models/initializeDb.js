@@ -9,7 +9,7 @@ const initializeDatabase = async (retries = 5, delay = 5000) => {
       rejectUnauthorized: false,
     },
   });
-  
+
   // seeding
   console.log("seeding...");
   await client.connect();
