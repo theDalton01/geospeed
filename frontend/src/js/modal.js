@@ -90,9 +90,15 @@ export function handleLocationModal() {
         document.getElementById('allowLocation').addEventListener('click', () => {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const { latitude, longitude } = position.coords;
-                    console.log(`User granted location: Lat: ${latitude}, Lng: ${longitude}`);
-                    // Here you would send the lat and lng to your backend
+                    const { latitude, longitude, accuracy } = position.coords;
+                    
+                    // Store location data for use in speedtest telemetry
+                    const locationData = {
+                        latitude: latitude,
+                        longitude: longitude,
+                        accuracy: accuracy || "unknown"
+                    };
+                    localStorage.setItem('userLocation', JSON.stringify(locationData));
                     localStorage.setItem('hasVisited', 'true');
                     localStorage.removeItem('locationDeniedTimestamp'); // Clean up denial timestamp
                     document.body.removeChild(modal);
