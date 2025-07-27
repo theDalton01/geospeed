@@ -29,9 +29,20 @@ const telemetryController = async (req, res, next) => {
     let latitude = null;
     let longitude = null;
     try {
-      const extraData = JSON.parse(extra);
-      latitude = +extraData.latitude || null;
-      longitude = +extraData.longitude || null;
+      if (extra && extra.trim() !== '') {
+        const extraData = JSON.parse(extra);
+        if (extraData && typeof extraData === 'object') {
+          // More robust parsing with validation
+          const lat = parseFloat(extraData.latitude);
+          const lng = parseFloat(extraData.longitude);
+          
+          // Validate that we have valid coordinates
+          if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+            latitude = lat;
+            longitude = lng;
+          }
+        }
+      }
     } catch (e) {
       console.error("Failed to parse extra data:", e);
     }
@@ -81,10 +92,16 @@ const telemetryController = async (req, res, next) => {
         .replace(hostnameRegex, '"hostname":"REDACTED"');
     }
 
-    // Insert data
+    // Insert data with PostGIS location
     const query = `
-            INSERT INTO speedtest_users (timestamp, ip, ispinfo, latitude, longitude, ua, lang, dl, ul, ping, jitter, log)
-            VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO speedtest_users (timestamp, ip, ispinfo, latitude, longitude, location, ua, lang, dl, ul, ping, jitter, log)
+            VALUES (NOW(), $1, $2, $3, $4, 
+                    CASE 
+                        WHEN $3 IS NOT NULL AND $4 IS NOT NULL 
+                        THEN ST_Point($4, $3)::geography 
+                        ELSE NULL 
+                    END, 
+                    $5, $6, $7, $8, $9, $10, $11)
             RETURNING id
         `;
     const values = [
@@ -102,8 +119,16 @@ const telemetryController = async (req, res, next) => {
     ];
 
     console.log("Executing query with values:", values);
+    console.log("PostGIS location will be created:", latitude !== null && longitude !== null ? `ST_Point(${longitude}, ${latitude})` : "NULL");
     const result = await pool.query(query, values);
     const id = result.rows[0].id;
+    
+    // Verify the location was stored correctly
+    if (latitude !== null && longitude !== null) {
+      const verifyQuery = "SELECT ST_AsText(location) as location_text FROM speedtest_users WHERE id = $1";
+      const verifyResult = await pool.query(verifyQuery, [id]);
+      console.log("Stored PostGIS location:", verifyResult.rows[0]?.location_text);
+    }
 
     // Set no-cache headers
     res.set({
