@@ -22,8 +22,12 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 function isWithinBetaZone(userLat, userLng) {
   const RADIUS_METERS = 200;
 
+  console.log(`User coordinates: ${userLat}, ${userLng}`);
+
   for (const location of BETA_LOCATIONS) {
     const distance = calculateDistance(userLat, userLng, location.latitude, location.longitude);
+    console.log(`Distance to ${location.shortName}: ${Math.round(distance)}m`);
+
     if (distance <= RADIUS_METERS) {
       console.log(`User is within ${Math.round(distance)}m of ${location.shortName}`);
       return true;
