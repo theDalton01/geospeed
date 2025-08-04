@@ -35,7 +35,7 @@ const telemetryController = async (req, res, next) => {
           // More robust parsing with validation
           const lat = parseFloat(extraData.latitude);
           const lng = parseFloat(extraData.longitude);
-          
+
           // Validate that we have valid coordinates
           if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
             latitude = lat;
@@ -50,12 +50,12 @@ const telemetryController = async (req, res, next) => {
     // Parse ispinfo and clean it
     let cleanedIspInfo = null;
     try {
-        const parsedIspInfo = JSON.parse(ispinfo);
-        if (parsedIspInfo && parsedIspInfo.rawIspInfo) {
-            cleanedIspInfo = cleanIspName(parsedIspInfo.rawIspInfo);
-        }
+      const parsedIspInfo = JSON.parse(ispinfo);
+      if (parsedIspInfo && parsedIspInfo.rawIspInfo) {
+        cleanedIspInfo = cleanIspName(parsedIspInfo.rawIspInfo);
+      }
     } catch (e) {
-        console.error("Failed to parse ispinfo:", e);
+      console.error("Failed to parse ispinfo:", e);
     }
 
     // Log processed data
@@ -98,7 +98,7 @@ const telemetryController = async (req, res, next) => {
             VALUES (NOW(), $1, $2, $3, $4, 
                     CASE 
                         WHEN $3 IS NOT NULL AND $4 IS NOT NULL 
-                        THEN ST_Point($4, $3)::geography 
+                        THEN ST_Point($4::decimal, $3::decimal)::geography 
                         ELSE NULL 
                     END, 
                     $5, $6, $7, $8, $9, $10, $11)
@@ -122,7 +122,7 @@ const telemetryController = async (req, res, next) => {
     console.log("PostGIS location will be created:", latitude !== null && longitude !== null ? `ST_Point(${longitude}, ${latitude})` : "NULL");
     const result = await pool.query(query, values);
     const id = result.rows[0].id;
-    
+
     // Verify the location was stored correctly
     if (latitude !== null && longitude !== null) {
       const verifyQuery = "SELECT ST_AsText(location) as location_text FROM speedtest_users WHERE id = $1";
