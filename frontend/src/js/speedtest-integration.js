@@ -45,7 +45,8 @@ function initializeSpeedtest() {
 
     // Set the backend URLs to your server
     // const baseUrl = 'https://netscope-production.up.railway.app/speedtest/backend';
-    const baseUrl = "https://api-staging-bf57.up.railway.app/speedtest/backend";
+    // const baseUrl = "https://api-staging-bf57.up.railway.app/speedtest/backend";
+    const baseUrl = "api-production-473b.up.railway.app";
     s.setParameter("url_dl", baseUrl + "/garbage.php");
     s.setParameter("url_ul", baseUrl + "/empty.php");
     s.setParameter("url_ping", baseUrl + "/empty.php");
