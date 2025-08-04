@@ -65,7 +65,7 @@ function setupTelemetryWithCurrentLocation(speedtestInstance) {
   return new Promise((resolve) => {
     // Check if user has previously granted location permission
     const hasLocationPermission = localStorage.getItem('hasVisited') === 'true';
-    
+
     if (!hasLocationPermission) {
       console.log("Telemetry disabled - user hasn't granted location permission");
       resolve();
@@ -102,9 +102,9 @@ function setupTelemetryWithCurrentLocation(speedtestInstance) {
         resolve();
       },
       {
-        timeout: 10000, // 10 second timeout
-        maximumAge: 0,  // Don't use cached location
-        enableHighAccuracy: true
+        timeout: 30000, // 30 second timeout (increased)
+        maximumAge: 300000,  // Allow 5-minute cached location
+        enableHighAccuracy: false // Use faster, less accurate location
       }
     );
   });
@@ -193,7 +193,7 @@ export function startStop() {
   } else {
     //test is not running, begin
     I("startStopBtn").className = "running";
-    
+
     // Get current location and set up telemetry before starting the test
     setupTelemetryWithCurrentLocation(s).then(() => {
       s.onupdate = function (data) {
