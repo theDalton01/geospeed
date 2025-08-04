@@ -24,8 +24,8 @@ const BETA_LOCATIONS = [
   {
     name: "Test Hostel Location",
     shortName: "HOSTEL",
-    latitude: 7.287262,
-    longitude: 5.141741
+    latitude: 7.2794437,
+    longitude: 5.1495598
   }
 ];
 
