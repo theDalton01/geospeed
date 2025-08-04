@@ -50,7 +50,7 @@ function initializeSpeedtest() {
     // Set the backend URLs to your server
     // const baseUrl = 'https://netscope-production.up.railway.app/speedtest/backend';
     // const baseUrl = "https://api-staging-bf57.up.railway.app/speedtest/backend";
-    const baseUrl = "api-production-473b.up.railway.app";
+    const baseUrl = "https://api-production-473b.up.railway.app/speedtest/backend";
     s.setParameter("url_dl", baseUrl + "/garbage.php");
     s.setParameter("url_ul", baseUrl + "/empty.php");
     s.setParameter("url_ping", baseUrl + "/empty.php");
@@ -91,7 +91,7 @@ function setupTelemetryWithCurrentLocation(speedtestInstance) {
           speedtestInstance.setParameter("telemetry_level", "basic");
           speedtestInstance.setParameter(
             "url_telemetry",
-            "https://api-staging-bf57.up.railway.app/speedtest/results/telemetry.php"
+            "https://api-production-473b.up.railway.app/speedtest/results/telemetry.php"
           );
           speedtestInstance.setParameter("telemetry_extra", JSON.stringify(currentLocationData));
           console.log("Telemetry enabled - user is within beta test zone");
