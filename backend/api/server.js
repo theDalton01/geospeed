@@ -71,23 +71,25 @@ const libspeedProxy = createProxyMiddleware({
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(rateLimiters.defaultLimiter); // Apply default rate limiting to all routes
 
-// Apply specific rate limiters to routes
+// Mount Librespeed proxy for backend routes (NO RATE LIMITING for speed tests)
+app.use('/speedtest/backend', libspeedProxy);
+
+// Apply specific rate limiters to routes that need them
 app.use("/speedtest/results", rateLimiters.telemetryLimiter);
 app.use("/api", rateLimiters.apiLimiter);
-
-// Mount Librespeed proxy for backend routes only
-app.use('/speedtest/backend', libspeedProxy);
 
 // Telemetry route with enhanced debugging
 app.use("/speedtest/results/telemetry.php", telemetryRouter);
 
-// // API Routes
+// API Routes
 app.use('/api', apiRouter);
 
 // Health check endpoint
 app.use("/health", healthRouter);
+
+// Apply default rate limiting to remaining routes (after speed test routes are defined)
+app.use(rateLimiters.defaultLimiter);
 
 // Apply error handling middleware
 app.use(errorHandler);
