@@ -20,6 +20,12 @@ const BETA_LOCATIONS = [
     shortName: "SOC",
     latitude: 7.30000, // Placeholder value
     longitude: 5.13500 // Placeholder value
+  },
+  {
+    name: "Test Hostel Location",
+    shortName: "HOSTEL",
+    latitude: 7.287262,
+    longitude: 5.141741
   }
 ];
 
