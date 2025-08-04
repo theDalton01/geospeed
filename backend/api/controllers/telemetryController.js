@@ -95,7 +95,7 @@ const telemetryController = async (req, res, next) => {
     // Insert data with PostGIS location
     const query = `
             INSERT INTO speedtest_users (timestamp, ip, ispinfo, latitude, longitude, location, ua, lang, dl, ul, ping, jitter, log)
-            VALUES (NOW(), $1, $2, $3, $4, 
+            VALUES (NOW(), $1, $2, $3::decimal, $4::decimal, 
                     CASE 
                         WHEN $3 IS NOT NULL AND $4 IS NOT NULL 
                         THEN ST_Point($4::decimal, $3::decimal)::geography 
