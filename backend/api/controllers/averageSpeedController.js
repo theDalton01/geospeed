@@ -29,6 +29,14 @@ const BETA_LOCATIONS = [
   }
 ];
 
+// Major Nigerian ISPs to always include in results
+const MAJOR_ISPS = [
+  "MTN",
+  "Airtel",
+  "Glo",
+  "9mobile"
+];
+
 const averageSpeed = async (req, res, next) => {
   try {
     const { latitude, longitude } = req.query;
@@ -72,19 +80,71 @@ const averageSpeed = async (req, res, next) => {
     const values = [queryLat, queryLng];
     const { rows } = await pool.query(query, values);
 
-    const result = rows.map((row) => {
+    // Create a map of ISP data from database results
+    const ispDataMap = new Map();
+    rows.forEach((row) => {
+      // Extract ISP name from ispinfo (handle various formats)
+      let ispName = row.ispinfo;
+
+      // Try to extract ISP name from common formats
+      if (typeof ispName === 'string') {
+        // Handle formats like "IP - ISP NAME Communication Limited, Nigeria"
+        const match = ispName.match(/\d+\.\d+\.\d+\.\d+\s*-\s*(.+?)(?:\s*Communication\s*Limited)?,\s*Nigeria/i);
+        if (match && match[1]) {
+          ispName = match[1].trim();
+        }
+
+        // Clean up common suffixes
+        ispName = ispName
+          .replace(/Communication\s*Limited/gi, '')
+          .replace(/,\s*Nigeria/gi, '')
+          .replace(/^\d+\.\d+\.\d+\.\d+\s*-\s*/, '')
+          .trim();
+      }
+
+      // Map the cleaned name to a major ISP if possible
+      const majorIsp = MAJOR_ISPS.find(isp =>
+        ispName.toLowerCase().includes(isp.toLowerCase()) ||
+        isp.toLowerCase().includes(ispName.toLowerCase())
+      );
+
+      const finalIspName = majorIsp || ispName;
+
       if (row.entry_count < 20) {
-        return {
-          ispinfo: row.ispinfo,
+        ispDataMap.set(finalIspName, {
+          ispinfo: finalIspName,
           average_download: "Not Enough Data",
           average_upload: "Not Enough Data",
-        };
+        });
       } else {
-        return {
-          ispinfo: row.ispinfo,
+        ispDataMap.set(finalIspName, {
+          ispinfo: finalIspName,
           average_download: parseSpeed(row.avg_download),
           average_upload: parseSpeed(row.avg_upload),
-        };
+        });
+      }
+    });
+
+    // Ensure all major ISPs are included in the result
+    const result = [];
+
+    // Add major ISPs that have data or mark them as "Not Enough Data"
+    MAJOR_ISPS.forEach(isp => {
+      if (ispDataMap.has(isp)) {
+        result.push(ispDataMap.get(isp));
+      } else {
+        result.push({
+          ispinfo: isp,
+          average_download: "Not Enough Data",
+          average_upload: "Not Enough Data",
+        });
+      }
+    });
+
+    // Add any other ISPs found in the data that aren't in the major ISPs list
+    ispDataMap.forEach((data, ispName) => {
+      if (!MAJOR_ISPS.includes(ispName)) {
+        result.push(data);
       }
     });
 
