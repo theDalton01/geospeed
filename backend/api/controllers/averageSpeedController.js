@@ -18,8 +18,8 @@ const BETA_LOCATIONS = [
   {
     name: "School of Computing, FUTA (SOC)",
     shortName: "SOC",
-    latitude: 7.30000, // Placeholder value
-    longitude: 5.13500 // Placeholder value
+    latitude: 7.304170,
+    longitude: 5.132946
   },
   {
     name: "Test Hostel Location",
